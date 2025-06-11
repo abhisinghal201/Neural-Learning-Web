@@ -1,0 +1,491 @@
+{
+  "week": 3,
+  "title": "Probability and Statistics - The Language of Uncertainty",
+  "essential_resources": {
+    "primary_textbook": {
+      "title": "Think Stats: Exploratory Data Analysis in Python",
+      "author": "Allen B. Downey",
+      "url": "https://greenteapress.com/thinkstats2/",
+      "type": "free_book",
+      "why_essential": "Perfect introduction to statistics for programmers. Emphasizes computational thinking and practical implementation over abstract theory.",
+      "key_chapters": [
+        "Chapter 2: Distributions",
+        "Chapter 5: Probability",
+        "Chapter 7: Hypothesis Testing",
+        "Chapter 8: Estimation"
+      ]
+    },
+    "intuitive_foundation": {
+      "title": "Seeing Theory - A Visual Introduction to Probability and Statistics",
+      "platform": "Brown University",
+      "url": "https://seeing-theory.brown.edu/",
+      "type": "interactive_website",
+      "why_essential": "Interactive visualizations make abstract concepts crystal clear. Play with parameters and see results immediately.",
+      "best_sections": [
+        "Basic Probability",
+        "Compound Probability", 
+        "Probability Distributions",
+        "Frequentist Inference",
+        "Bayesian Inference"
+      ]
+    },
+    "mathematical_rigor": {
+      "title": "Introduction to Probability",
+      "authors": ["Dimitri P. Bertsekas", "John N. Tsitsiklis"],
+      "url": "https://www.amazon.com/Introduction-Probability-2nd-Dimitri-Bertsekas/dp/188652923X",
+      "type": "textbook",
+      "why_essential": "Gold standard for probability theory. Rigorous but accessible mathematical treatment.",
+      "note": "More advanced than needed for week 3, but excellent reference"
+    }
+  },
+  "visual_learning": {
+    "probability_intuition": [
+      {
+        "title": "3Blue1Brown - Bayes' Theorem",
+        "url": "https://www.youtube.com/watch?v=HZGCoVF3YvM",
+        "duration": "15 min",
+        "difficulty": "beginner",
+        "why_valuable": "Grant Sanderson's visual explanation of Bayes' theorem is legendary. Makes the abstract concept completely intuitive.",
+        "key_insight": "Bayes' theorem is just updating beliefs with evidence - shown through beautiful visualizations"
+      },
+      {
+        "title": "StatQuest - Central Limit Theorem",
+        "url": "https://www.youtube.com/watch?v=YAlJCEDH2uY",
+        "duration": "6 min", 
+        "difficulty": "beginner",
+        "why_valuable": "Josh Starmer explains why the CLT is the most important theorem in statistics with clear examples.",
+        "key_insight": "Sample means become normal regardless of population distribution - the foundation of statistical inference"
+      },
+      {
+        "title": "Probability Distributions Explained",
+        "url": "https://www.youtube.com/watch?v=oI3hZJqXJuc",
+        "duration": "20 min",
+        "difficulty": "intermediate", 
+        "why_valuable": "Visual tour of major probability distributions and when to use each one.",
+        "distributions_covered": ["Normal", "Binomial", "Poisson", "Exponential", "Uniform"]
+      }
+    ],
+    "interactive_tools": [
+      {
+        "title": "Probability and Statistics Applets",
+        "url": "https://www.rossmanchance.com/applets/",
+        "type": "web_applets",
+        "difficulty": "beginner",
+        "why_valuable": "Interactive simulations for all major statistical concepts. Experiment with parameters and see immediate results."
+      },
+      {
+        "title": "GeoGebra Probability",
+        "url": "https://www.geogebra.org/probability",
+        "type": "interactive_simulations",
+        "difficulty": "intermediate",
+        "why_valuable": "Dynamic probability and statistics visualizations. Create your own simulations."
+      }
+    ]
+  },
+  "bayesian_thinking": {
+    "foundational_resources": [
+      {
+        "title": "Think Bayes: Bayesian Statistics in Python",
+        "author": "Allen B. Downey",
+        "url": "https://greenteapress.com/wp/think-bayes/",
+        "type": "free_book",
+        "difficulty": "intermediate",
+        "why_essential": "Computational approach to Bayesian statistics. Learn by implementing rather than memorizing formulas.",
+        "key_chapters": [
+          "Chapter 1: Bayes' Theorem",
+          "Chapter 3: Estimation",
+          "Chapter 4: More Estimation",
+          "Chapter 5: Odds and Addends"
+        ]
+      },
+      {
+        "title": "Bayesian Methods for Hackers",
+        "authors": ["Cameron Davidson-Pilon"],
+        "url": "https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers",
+        "type": "free_book",
+        "difficulty": "intermediate",
+        "why_essential": "Practical Bayesian analysis with Python. Focuses on intuition and application over mathematical proofs.",
+        "best_chapters": [
+          "Chapter 1: Introduction to Bayesian Methods",
+          "Chapter 2: A little more on PyMC",
+          "Chapter 3: Opening the Black Box of MCMC"
+        ]
+      }
+    ],
+    "practical_applications": [
+      {
+        "title": "Bayesian A/B Testing",
+        "url": "https://www.evanmiller.org/bayesian-ab-testing.html",
+        "type": "blog_post",
+        "difficulty": "intermediate",
+        "why_valuable": "Shows how Bayesian methods are superior to traditional A/B testing. Practical implementation guide.",
+        "key_insight": "Get continuous probability statements instead of binary significant/not-significant decisions"
+      },
+      {
+        "title": "Medical Diagnosis with Bayes' Theorem",
+        "url": "https://betterexplained.com/articles/an-intuitive-and-short-explanation-of-bayes-theorem/",
+        "type": "tutorial",
+        "difficulty": "beginner",
+        "why_valuable": "Classic medical diagnosis example that makes Bayes' theorem immediately practical and intuitive."
+      }
+    ]
+  },
+  "statistical_inference": {
+    "hypothesis_testing": [
+      {
+        "title": "Statistical Inference - Hypothesis Testing",
+        "platform": "Khan Academy",
+        "url": "https://www.khanacademy.org/math/statistics-probability/significance-tests-one-sample",
+        "type": "course",
+        "difficulty": "beginner",
+        "why_valuable": "Step-by-step introduction to hypothesis testing with interactive practice problems.",
+        "topics_covered": [
+          "Null and alternative hypotheses",
+          "Test statistics and p-values", 
+          "Type I and Type II errors",
+          "Confidence intervals"
+        ]
+      },
+      {
+        "title": "The ASA Statement on p-Values",
+        "url": "https://www.tandfonline.com/doi/full/10.1080/00031305.2016.1154108",
+        "type": "research_paper",
+        "difficulty": "advanced",
+        "why_valuable": "Official statement from American Statistical Association about proper interpretation of p-values. Essential for avoiding common mistakes.",
+        "key_points": [
+          "p-values do not measure probability that hypothesis is true",
+          "Statistical significance does not mean practical significance",
+          "p-hacking and multiple comparisons problems"
+        ]
+      }
+    ],
+    "confidence_intervals": [
+      {
+        "title": "Bootstrap Methods and Confidence Intervals",
+        "url": "https://www.stat.cmu.edu/~larry/=stat705/Lecture13.pdf",
+        "type": "lecture_notes",
+        "difficulty": "intermediate",
+        "why_valuable": "Clear explanation of bootstrap resampling - one of the most practical statistical methods.",
+        "key_insight": "Bootstrap lets you estimate sampling distributions without mathematical assumptions"
+      },
+      {
+        "title": "Understanding Confidence Intervals",
+        "url": "https://www.youtube.com/watch?v=tFWsuO9f74o",
+        "duration": "8 min",
+        "difficulty": "beginner",
+        "why_valuable": "Clears up common misconceptions about what confidence intervals actually mean."
+      }
+    ]
+  },
+  "distributions_deep_dive": {
+    "essential_distributions": [
+      {
+        "title": "Normal Distribution Deep Dive",
+        "url": "https://www.mathsisfun.com/data/standard-normal-distribution.html",
+        "type": "tutorial",
+        "difficulty": "beginner",
+        "why_valuable": "Comprehensive coverage of the most important distribution in statistics.",
+        "topics": [
+          "68-95-99.7 rule",
+          "Z-scores and standardization",
+          "Applications in ML"
+        ]
+      },
+      {
+        "title": "When to Use Which Distribution",
+        "url": "https://blog.cloudera.com/blog/2015/12/common-probability-distributions-the-data-scientists-crib-sheet/",
+        "type": "reference_guide",
+        "difficulty": "intermediate",
+        "why_valuable": "Practical guide for choosing appropriate distributions for different types of data.",
+        "distributions_covered": [
+          "Bernoulli/Binomial - binary outcomes",
+          "Poisson - rare events/counts",
+          "Exponential - waiting times",
+          "Normal - continuous measurements",
+          "Beta - proportions",
+          "Gamma - positive continuous"
+        ]
+      }
+    ],
+    "advanced_topics": [
+      {
+        "title": "Maximum Likelihood Estimation",
+        "url": "https://towardsdatascience.com/probability-concepts-explained-maximum-likelihood-estimation-c7b4342fdbb1",
+        "type": "blog_post",
+        "difficulty": "advanced",
+        "why_valuable": "Foundation of most ML algorithms. Shows how we estimate parameters from data.",
+        "connection_to_ml": "Most neural network training is maximum likelihood estimation with gradient descent"
+      },
+      {
+        "title": "Information Theory and Entropy",
+        "url": "https://www.youtube.com/watch?v=ErfnhcEV1O8",
+        "duration": "22 min",
+        "difficulty": "advanced",
+        "why_valuable": "Preview of next week's topic. Shows connection between probability and information.",
+        "ml_applications": [
+          "Cross-entropy loss functions",
+          "Decision tree splitting criteria",
+          "Mutual information for feature selection"
+        ]
+      }
+    ]
+  },
+  "coding_resources": {
+    "python_libraries": [
+      {
+        "library": "scipy.stats",
+        "url": "https://docs.scipy.org/doc/scipy/reference/stats.html",
+        "why_useful": "Comprehensive statistical functions. Compare your implementations with professional library.",
+        "key_functions": [
+          "norm, binom, poisson - distribution functions",
+          "ttest_1samp, ttest_ind - hypothesis tests",
+          "bootstrap - resampling methods"
+        ]
+      },
+      {
+        "library": "statsmodels",
+        "url": "https://www.statsmodels.org/stable/index.html",
+        "why_useful": "Advanced statistical modeling library. More comprehensive than scipy.stats.",
+        "best_for": [
+          "Regression analysis",
+          "Time series analysis", 
+          "Statistical tests"
+        ]
+      },
+      {
+        "library": "PyMC3",
+        "url": "https://docs.pymc.io/",
+        "why_useful": "Probabilistic programming for Bayesian analysis. Industry standard for Bayesian ML.",
+        "note": "Advanced tool - focus on understanding concepts first"
+      }
+    ],
+    "hands_on_tutorials": [
+      {
+        "title": "Probability and Statistics with Python",
+        "url": "https://github.com/tirthajyoti/Stats-Maths-with-Python",
+        "type": "jupyter_notebooks",
+        "difficulty": "intermediate",
+        "why_valuable": "Complete implementations of statistical concepts in Python. Great for comparing your solutions."
+      },
+      {
+        "title": "Statistical Tests in Python",
+        "url": "https://machinelearningmastery.com/statistical-hypothesis-tests-in-python-cheat-sheet/",
+        "type": "tutorial",
+        "difficulty": "beginner",
+        "why_valuable": "Practical guide to implementing statistical tests. Know when to use which test."
+      }
+    ]
+  },
+  "real_world_applications": {
+    "ab_testing": [
+      {
+        "title": "The Complete Guide to A/B Testing",
+        "url": "https://vwo.com/ab-testing/",
+        "type": "comprehensive_guide",
+        "difficulty": "intermediate",
+        "why_valuable": "Industry-standard approach to experimental design and analysis.",
+        "statistical_concepts": [
+          "Sample size calculation",
+          "Statistical power",
+          "Multiple testing corrections"
+        ]
+      },
+      {
+        "title": "Bayesian A/B Testing at VWO",
+        "url": "https://vwo.com/blog/bayesian-ab-testing/",
+        "type": "case_study",
+        "difficulty": "advanced",
+        "why_valuable": "Real-world application of Bayesian methods in industry."
+      }
+    ],
+    "finance": [
+      {
+        "title": "Value at Risk (VaR) Calculation",
+        "url": "https://www.investopedia.com/articles/04/092904.asp",
+        "type": "tutorial",
+        "difficulty": "intermediate",
+        "why_valuable": "Classic application of probability distributions to financial risk management.",
+        "statistical_methods": [
+          "Historical simulation",
+          "Parametric VaR using normal distribution",
+          "Monte Carlo simulation"
+        ]
+      }
+    ],
+    "healthcare": [
+      {
+        "title": "Medical Statistics and Evidence-Based Medicine",
+        "url": "https://www.bmj.com/about-bmj/resources-readers/publications/statistics-square-one",
+        "type": "medical_guide",
+        "difficulty": "intermediate",
+        "why_valuable": "Shows how statistical thinking is crucial in medical decision-making.",
+        "key_concepts": [
+          "Sensitivity and specificity",
+          "Positive and negative predictive values",
+          "Number needed to treat"
+        ]
+      }
+    ]
+  },
+  "assessment_resources": {
+    "practice_problems": [
+      {
+        "title": "Khan Academy Statistics Practice",
+        "url": "https://www.khanacademy.org/math/statistics-probability",
+        "type": "interactive_exercises",
+        "difficulty": "beginner",
+        "why_valuable": "Immediate feedback on probability and statistics problems."
+      },
+      {
+        "title": "MIT Introduction to Probability Problem Sets",
+        "url": "https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-041-probabilistic-systems-analysis-and-applied-probability-fall-2010/assignments/",
+        "type": "problem_sets",
+        "difficulty": "advanced",
+        "why_valuable": "Challenging problems that test deep understanding."
+      }
+    ],
+    "self_assessment": [
+      {
+        "question": "Can you explain the difference between probability and likelihood?",
+        "difficulty": "intermediate",
+        "hint": "Probability: given parameters, what's the chance of observing data? Likelihood: given data, how well do parameters explain it?"
+      },
+      {
+        "question": "When would you use a t-test vs. a Mann-Whitney U test?",
+        "difficulty": "intermediate", 
+        "hint": "t-test assumes normality, Mann-Whitney is non-parametric"
+      },
+      {
+        "question": "What's wrong with this statement: 'There's a 95% probability that the true mean lies in this confidence interval'?",
+        "difficulty": "advanced",
+        "hint": "Confidence intervals are about the procedure, not the specific interval"
+      }
+    ]
+  },
+  "common_misconceptions": [
+    {
+      "misconception": "Correlation implies causation",
+      "reality": "Correlation only shows association. Causation requires additional evidence like randomized experiments or causal inference methods.",
+      "example": "Ice cream sales and drowning deaths are correlated, but ice cream doesn't cause drowning - both increase in summer."
+    },
+    {
+      "misconception": "A p-value is the probability that the null hypothesis is true",
+      "reality": "p-value is the probability of observing data this extreme IF the null hypothesis is true.",
+      "correct_interpretation": "p-value = P(data | H₀), not P(H₀ | data)"
+    },
+    {
+      "misconception": "95% confidence interval means 95% probability the true value is in the interval",
+      "reality": "95% of such intervals constructed this way will contain the true value. Any specific interval either does or doesn't contain it.",
+      "frequentist_vs_bayesian": "This is why some prefer Bayesian credible intervals"
+    },
+    {
+      "misconception": "Statistical significance equals practical significance",
+      "reality": "With large enough samples, tiny differences become statistically significant but may not matter practically.",
+      "solution": "Always consider effect sizes and confidence intervals, not just p-values"
+    }
+  ],
+  "weekly_schedule": {
+    "day_1": {
+      "morning_theory": {
+        "primary": "3Blue1Brown - Bayes' Theorem video",
+        "supplementary": "Seeing Theory - Basic Probability section",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement probability functions in exercises.py",
+        "supplementary": "Experiment with Monte Carlo simulations",
+        "duration": "25 min"
+      }
+    },
+    "day_2": {
+      "morning_theory": {
+        "primary": "StatQuest - Central Limit Theorem",
+        "supplementary": "Think Stats Chapter 2 - Distributions",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement distribution functions from scratch",
+        "supplementary": "Visualize different distributions",
+        "duration": "25 min"
+      }
+    },
+    "day_3": {
+      "morning_theory": {
+        "primary": "Think Bayes Chapter 1",
+        "supplementary": "Bayesian A/B testing article",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Build Naive Bayes classifier",
+        "supplementary": "Implement Bayesian parameter estimation",
+        "duration": "25 min"
+      }
+    },
+    "day_4": {
+      "morning_theory": {
+        "primary": "Khan Academy - Hypothesis Testing",
+        "supplementary": "ASA statement on p-values",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement statistical tests",
+        "supplementary": "Bootstrap confidence intervals",
+        "duration": "25 min"
+      }
+    }
+  },
+  "vault_unlock_conditions": {
+    "secret_archives": [
+      {
+        "item": "The Prosecutor's Fallacy That Changed Legal History",
+        "unlock_condition": "Master Bayes' theorem and conditional probability",
+        "preview": "How misunderstanding conditional probability led to wrongful convictions..."
+      },
+      {
+        "item": "The Statistics War: Fisher vs. Neyman-Pearson",
+        "unlock_condition": "Implement hypothesis testing from scratch",
+        "preview": "The bitter academic feud that shaped modern statistics..."
+      }
+    ],
+    "controversy_files": [
+      {
+        "item": "The Replication Crisis: When Statistics Goes Wrong",
+        "unlock_condition": "Complete multiple testing corrections",
+        "preview": "How p-hacking and statistical misuse created a scientific crisis..."
+      },
+      {
+        "item": "The Monty Hall Problem: When Intuition Fails",
+        "unlock_condition": "Master conditional probability",
+        "preview": "The probability puzzle that stumped Nobel laureates..."
+      }
+    ],
+    "beautiful_mind": [
+      {
+        "item": "The Elegant Mathematics of Uncertainty",
+        "unlock_condition": "Complete all probability and statistics exercises",
+        "preview": "Why the axioms of probability theory are among the most beautiful in mathematics..."
+      },
+      {
+        "item": "Bayes' Theorem: The Crown Jewel of Rational Thinking",
+        "unlock_condition": "Build Bayesian reasoning applications",
+        "preview": "How one simple equation revolutionized science, AI, and rational decision-making..."
+      }
+    ]
+  },
+  "next_week_preview": {
+    "topic": "Eigenvalues and Principal Component Analysis",
+    "connection": "PCA finds the directions of maximum variance in data - a direct application of statistical thinking about data variability. The eigenvalues tell us how much variance each principal component captures.",
+    "statistical_foundation": "Understanding variance and covariance from this week is essential for PCA next week."
+  },
+  "career_impact": {
+    "why_critical": "Statistics is the foundation of data science. It separates those who can only run algorithms from those who can design experiments, interpret results, and make data-driven decisions.",
+    "industry_applications": [
+      "A/B testing for product development",
+      "Risk assessment in finance",
+      "Quality control in manufacturing",
+      "Clinical trials in healthcare",
+      "User analytics in technology"
+    ],
+    "competitive_advantage": "Deep statistical thinking allows you to solve problems that require more than just applying ML algorithms - you can design proper experiments, avoid statistical pitfalls, and communicate uncertainty effectively."
+  }
+}
