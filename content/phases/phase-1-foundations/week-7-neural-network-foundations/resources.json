@@ -1,0 +1,618 @@
+{
+  "week": 7,
+  "title": "Neural Network Foundations - Building Artificial Intelligence from First Principles",
+  "essential_resources": {
+    "primary_textbook": {
+      "title": "Deep Learning",
+      "authors": ["Ian Goodfellow", "Yoshua Bengio", "Aaron Courville"],
+      "url": "https://www.deeplearningbook.org/",
+      "type": "free_book",
+      "why_essential": "The definitive textbook on deep learning. Comprehensive mathematical treatment from basics to cutting-edge research.",
+      "key_chapters": [
+        "Chapter 6: Deep Feedforward Networks",
+        "Chapter 8: Optimization for Training Deep Models",
+        "Chapter 9: Convolutional Networks",
+        "Chapter 10: Sequence Modeling: Recurrent and Recursive Nets"
+      ]
+    },
+    "beginner_friendly": {
+      "title": "Neural Networks and Deep Learning",
+      "author": "Michael Nielsen",
+      "url": "http://neuralnetworksanddeeplearning.com/",
+      "type": "free_online_book",
+      "why_essential": "Best introduction to neural networks. Clear explanations with interactive examples and visual intuitions.",
+      "strength": "Perfect balance of mathematical rigor and intuitive understanding"
+    },
+    "visual_foundation": {
+      "title": "3Blue1Brown - Neural Networks Series",
+      "url": "https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi",
+      "total_duration": "1 hour",
+      "type": "video_series",
+      "why_essential": "Grant Sanderson's legendary visual explanation of neural networks. Makes complex concepts intuitive.",
+      "episodes": [
+        "But what is a neural network?",
+        "Gradient descent, how neural networks learn",
+        "What is backpropagation really doing?",
+        "Backpropagation calculus"
+      ]
+    }
+  },
+  "mathematical_foundations": {
+    "linear_algebra_applications": [
+      {
+        "title": "Linear Algebra in Neural Networks",
+        "url": "https://explained.ai/matrix-calculus/index.html",
+        "type": "tutorial",
+        "difficulty": "intermediate",
+        "why_valuable": "Shows how matrix operations power neural network computations. Essential for understanding efficiency.",
+        "key_concepts": [
+          "Matrix multiplication as batch processing",
+          "Vectorization for GPU acceleration",
+          "Gradient computation using matrix calculus"
+        ]
+      },
+      {
+        "title": "The Matrix Calculus You Need For Deep Learning",
+        "authors": ["Terence Parr", "Jeremy Howard"],
+        "url": "https://arxiv.org/abs/1802.01528",
+        "type": "paper",
+        "difficulty": "intermediate",
+        "why_essential": "Practical guide to matrix calculus for neural networks. Bridges theory and implementation.",
+        "focus": "How to compute gradients efficiently using matrix operations"
+      }
+    ],
+    "calculus_applications": [
+      {
+        "title": "Calculus on Computational Graphs: Backpropagation",
+        "author": "Christopher Olah",
+        "url": "https://colah.github.io/posts/2015-08-Backprop/",
+        "type": "blog_post",
+        "difficulty": "intermediate",
+        "why_essential": "Best explanation of backpropagation using computational graphs. Makes the chain rule crystal clear.",
+        "key_insight": "Backpropagation is just the chain rule applied systematically"
+      },
+      {
+        "title": "Automatic Differentiation in Machine Learning: a Survey",
+        "authors": ["Atılım Günes Baydin et al."],
+        "url": "https://arxiv.org/abs/1502.05767",
+        "type": "survey_paper",
+        "difficulty": "advanced",
+        "why_valuable": "Comprehensive overview of automatic differentiation techniques that power modern deep learning frameworks."
+      }
+    ]
+  },
+  "activation_functions": {
+    "comprehensive_guides": [
+      {
+        "title": "Activation Functions in Neural Networks",
+        "url": "https://towardsdatascience.com/activation-functions-neural-networks-1cbd9f8d91d6",
+        "type": "tutorial",
+        "difficulty": "beginner",
+        "why_valuable": "Complete overview of activation functions with pros/cons and use cases for each.",
+        "functions_covered": [
+          "Sigmoid, Tanh, ReLU, Leaky ReLU",
+          "ELU, Swish, GELU",
+          "When to use each activation"
+        ]
+      },
+      {
+        "title": "Dying ReLU Problem and Solutions",
+        "url": "https://machinelearningmastery.com/rectified-linear-activation-function-for-deep-learning-neural-networks/",
+        "type": "technical_guide",
+        "difficulty": "intermediate",
+        "why_valuable": "Explains why ReLU neurons can 'die' and how modern variants solve this problem."
+      }
+    ],
+    "research_papers": [
+      {
+        "title": "Rectified Linear Units Improve Restricted Boltzmann Machines",
+        "authors": ["Vinod Nair", "Geoffrey E. Hinton"],
+        "url": "https://www.cs.toronto.edu/~fritz/absps/reluICML.pdf",
+        "year": "2010",
+        "type": "seminal_paper",
+        "why_historic": "The paper that popularized ReLU activations in deep learning.",
+        "impact": "Showed that simple ReLU often outperforms more complex activations"
+      },
+      {
+        "title": "Searching for Activation Functions",
+        "authors": ["Prajit Ramachandran", "Barret Zoph", "Quoc V. Le"],
+        "url": "https://arxiv.org/abs/1710.05941",
+        "type": "research_paper",
+        "difficulty": "advanced",
+        "why_valuable": "Introduced Swish activation and showed how to systematically search for better activations."
+      }
+    ]
+  },
+  "backpropagation_deep_dive": {
+    "foundational_papers": [
+      {
+        "title": "Learning representations by back-propagating errors",
+        "authors": ["David E. Rumelhart", "Geoffrey E. Hinton", "Ronald J. Williams"],
+        "url": "https://www.nature.com/articles/323533a0",
+        "year": "1986",
+        "type": "historic_paper",
+        "why_historic": "The paper that popularized backpropagation and launched the neural network revolution.",
+        "impact": "Made training deep networks practical for the first time"
+      },
+      {
+        "title": "Efficient BackProp",
+        "authors": ["Yann LeCun et al."],
+        "url": "http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf",
+        "type": "practical_guide",
+        "difficulty": "intermediate",
+        "why_essential": "Practical wisdom about implementing backpropagation effectively. Many insights still relevant today.",
+        "key_insights": [
+          "Importance of input normalization",
+          "Weight initialization strategies",
+          "Learning rate adaptation techniques"
+        ]
+      }
+    ],
+    "modern_perspectives": [
+      {
+        "title": "Backpropagation Applied to Handwritten Zip Code Recognition",
+        "authors": ["Y. LeCun et al."],
+        "url": "http://yann.lecun.com/exdb/publis/pdf/lecun-89e.pdf",
+        "year": "1989",
+        "type": "application_paper",
+        "why_valuable": "Early demonstration of backpropagation on real-world problem. Shows evolution from theory to practice."
+      },
+      {
+        "title": "Understanding the difficulty of training deep feedforward neural networks",
+        "authors": ["Xavier Glorot", "Yoshua Bengio"],
+        "url": "http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf",
+        "type": "research_paper",
+        "difficulty": "intermediate",
+        "why_valuable": "Explains training difficulties in deep networks and introduces Xavier initialization."
+      }
+    ]
+  },
+  "implementation_guides": {
+    "from_scratch_tutorials": [
+      {
+        "title": "Neural Networks from Scratch",
+        "author": "Harrison Kinsley",
+        "url": "https://nnfs.io/",
+        "type": "book_and_code",
+        "difficulty": "beginner",
+        "why_essential": "Complete implementation of neural networks from scratch in Python. No libraries, just math.",
+        "covers": [
+          "Neurons and layers",
+          "Forward and backward propagation",
+          "Loss functions and optimization",
+          "Regularization techniques"
+        ]
+      },
+      {
+        "title": "Build a Neural Network from Scratch in Python",
+        "url": "https://machinelearningmastery.com/implement-backpropagation-algorithm-scratch-python/",
+        "type": "tutorial",
+        "difficulty": "intermediate",
+        "why_valuable": "Step-by-step implementation with clear explanations of each component."
+      }
+    ],
+    "framework_understanding": [
+      {
+        "title": "PyTorch Internals",
+        "url": "http://blog.ezyang.com/2019/05/pytorch-internals/",
+        "type": "technical_blog",
+        "difficulty": "advanced",
+        "why_valuable": "Deep dive into how modern deep learning frameworks implement neural networks.",
+        "insight": "Understanding frameworks helps you debug and optimize your models"
+      },
+      {
+        "title": "TensorFlow's Automatic Differentiation",
+        "url": "https://www.tensorflow.org/guide/autodiff",
+        "type": "documentation",
+        "difficulty": "intermediate",
+        "why_valuable": "Explains how automatic differentiation works in practice."
+      }
+    ]
+  },
+  "optimization_and_training": {
+    "initialization_strategies": [
+      {
+        "title": "Weight Initialization in Neural Networks: A Journey From the Basics to Kaiming",
+        "url": "https://towardsdatascience.com/weight-initialization-in-neural-networks-a-journey-from-the-basics-to-kaiming-954fb9b47c79",
+        "type": "tutorial",
+        "difficulty": "intermediate",
+        "why_valuable": "Comprehensive guide to weight initialization methods and why they matter.",
+        "methods_covered": [
+          "Zero, random, Xavier/Glorot initialization",
+          "He/Kaiming initialization for ReLU",
+          "Modern techniques like LSUV"
+        ]
+      },
+      {
+        "title": "Delving Deep into Rectifiers",
+        "authors": ["Kaiming He et al."],
+        "url": "https://arxiv.org/abs/1502.01852",
+        "type": "research_paper",
+        "difficulty": "intermediate",
+        "why_valuable": "Introduced He initialization and provided theoretical analysis of ReLU networks."
+      }
+    ],
+    "loss_functions": [
+      {
+        "title": "Loss Functions in Neural Networks",
+        "url": "https://ml-cheatsheet.readthedocs.io/en/latest/loss_functions.html",
+        "type": "reference",
+        "difficulty": "beginner",
+        "why_valuable": "Comprehensive reference for different loss functions with mathematical formulations and use cases."
+      },
+      {
+        "title": "The Cross-Entropy Method for Continuous Optimization",
+        "url": "https://link.springer.com/article/10.1007/s10479-006-0045-z",
+        "type": "research_paper",
+        "difficulty": "advanced",
+        "why_valuable": "Theoretical foundation for cross-entropy loss and its optimization properties."
+      }
+    ]
+  },
+  "regularization_techniques": {
+    "classical_methods": [
+      {
+        "title": "Regularization in Neural Networks",
+        "url": "https://towardsdatascience.com/regularization-in-machine-learning-76441ddcf99a",
+        "type": "tutorial",
+        "difficulty": "beginner",
+        "why_valuable": "Overview of L1, L2, and other classical regularization techniques.",
+        "methods": [
+          "L1 and L2 weight penalties",
+          "Early stopping",
+          "Data augmentation"
+        ]
+      }
+    ],
+    "modern_techniques": [
+      {
+        "title": "Dropout: A Simple Way to Prevent Neural Networks from Overfitting",
+        "authors": ["Nitish Srivastava et al."],
+        "url": "http://jmlr.org/papers/v15/srivastava14a.html",
+        "type": "seminal_paper",
+        "difficulty": "intermediate",
+        "why_essential": "The paper that introduced dropout - one of the most important regularization techniques.",
+        "impact": "Dramatically improved generalization in deep networks"
+      },
+      {
+        "title": "Batch Normalization: Accelerating Deep Network Training",
+        "authors": ["Sergey Ioffe", "Christian Szegedy"],
+        "url": "https://arxiv.org/abs/1502.03167",
+        "type": "research_paper",
+        "difficulty": "intermediate",
+        "why_valuable": "Introduced batch normalization, which revolutionized deep network training."
+      }
+    ]
+  },
+  "practical_applications": {
+    "computer_vision": [
+      {
+        "title": "MNIST Handwritten Digit Recognition with Neural Networks",
+        "url": "http://neuralnetworksanddeeplearning.com/chap1.html",
+        "type": "tutorial",
+        "difficulty": "beginner",
+        "why_valuable": "Classic first application of neural networks. Perfect for understanding basics.",
+        "learning_value": "Shows complete pipeline from data to trained model"
+      },
+      {
+        "title": "CS231n: Convolutional Neural Networks for Visual Recognition",
+        "url": "http://cs231n.stanford.edu/",
+        "type": "course",
+        "difficulty": "intermediate",
+        "why_valuable": "Stanford's legendary computer vision course. Covers neural networks for images comprehensively."
+      }
+    ],
+    "natural_language": [
+      {
+        "title": "Neural Networks for NLP",
+        "url": "https://web.stanford.edu/class/cs224n/",
+        "type": "course",
+        "difficulty": "intermediate",
+        "why_valuable": "Shows how neural networks revolutionized natural language processing."
+      }
+    ]
+  },
+  "debugging_and_troubleshooting": {
+    "practical_guides": [
+      {
+        "title": "A Recipe for Training Neural Networks",
+        "author": "Andrej Karpathy",
+        "url": "https://karpathy.github.io/2019/04/25/recipe/",
+        "type": "blog_post",
+        "difficulty": "intermediate",
+        "why_essential": "Practical guide to debugging neural network training from a leading practitioner.",
+        "debugging_steps": [
+          "Become one with the data",
+          "Set up end-to-end training skeleton",
+          "Overfit a single batch",
+          "Find good initial learning rate",
+          "Tune hyperparameters"
+        ]
+      },
+      {
+        "title": "Troubleshooting Deep Neural Networks",
+        "url": "http://josh-tobin.com/assets/pdf/troubleshooting-deep-neural-networks-01-19.pdf",
+        "author": "Josh Tobin",
+        "type": "practical_guide",
+        "difficulty": "intermediate",
+        "why_valuable": "Systematic approach to diagnosing and fixing neural network problems."
+      }
+    ],
+    "gradient_checking": [
+      {
+        "title": "Gradient Checking and Advanced Optimization",
+        "url": "https://www.coursera.org/learn/deep-neural-network/lecture/Y3s6r/gradient-checking",
+        "platform": "Coursera (Andrew Ng)",
+        "type": "video_lecture",
+        "difficulty": "beginner",
+        "why_valuable": "Clear explanation of how to verify backpropagation implementation."
+      }
+    ]
+  },
+  "historical_perspective": {
+    "evolution_of_ideas": [
+      {
+        "title": "The Perceptron: A Probabilistic Model for Information Storage",
+        "author": "Frank Rosenblatt",
+        "url": "https://www.ling.upenn.edu/courses/cogs501/Rosenblatt1958.pdf",
+        "year": "1958",
+        "type": "historic_paper",
+        "why_historic": "The birth of artificial neural networks. Shows the original inspiration from biological neurons.",
+        "impact": "Launched the entire field of neural computation"
+      },
+      {
+        "title": "Perceptrons: An Introduction to Computational Geometry",
+        "authors": ["Marvin Minsky", "Seymour Papert"],
+        "year": "1969",
+        "type": "book",
+        "why_historic": "Showed limitations of simple perceptrons, leading to 'AI winter' but also motivating multilayer networks.",
+        "controversy": "Nearly killed neural network research for a decade"
+      }
+    ],
+    "renaissance_period": [
+      {
+        "title": "Parallel Distributed Processing",
+        "authors": ["David E. Rumelhart", "James L. McClelland"],
+        "year": "1986",
+        "type": "book_series",
+        "why_historic": "Revived neural networks in the 1980s with backpropagation and distributed representations.",
+        "impact": "Established neural networks as serious AI approach"
+      }
+    ]
+  },
+  "visual_learning": {
+    "interactive_demos": [
+      {
+        "title": "TensorFlow Playground",
+        "url": "https://playground.tensorflow.org/",
+        "type": "interactive_tool",
+        "difficulty": "beginner",
+        "why_essential": "Interactive neural network visualization. Experiment with architectures and see results immediately.",
+        "features": [
+          "Real-time training visualization",
+          "Architecture experimentation",
+          "Feature importance visualization"
+        ]
+      },
+      {
+        "title": "Neural Network Visualization",
+        "url": "https://www.cs.ryerson.ca/~aharley/vis/",
+        "type": "interactive_visualization",
+        "difficulty": "beginner",
+        "why_valuable": "3D visualization of neural network activations. See what each layer learns."
+      }
+    ],
+    "animation_galleries": [
+      {
+        "title": "Neural Network Animations",
+        "url": "https://github.com/gcucurull/visual-neural-networks",
+        "type": "github_repository",
+        "difficulty": "intermediate",
+        "why_valuable": "Collection of animations showing neural network training dynamics."
+      }
+    ]
+  },
+  "coding_resources": {
+    "minimal_implementations": [
+      {
+        "title": "Micrograd",
+        "author": "Andrej Karpathy",
+        "url": "https://github.com/karpathy/micrograd",
+        "type": "educational_code",
+        "difficulty": "intermediate",
+        "why_essential": "Minimal automatic differentiation engine in ~100 lines. Perfect for understanding autograd.",
+        "educational_value": "Shows how PyTorch/TensorFlow work under the hood"
+      },
+      {
+        "title": "Neural Networks from Scratch in Python",
+        "url": "https://github.com/Sentdex/NeuralNetworks-from-scratch-in-Python",
+        "type": "code_repository",
+        "difficulty": "beginner",
+        "why_valuable": "Complete implementation accompanying the NNFS book."
+      }
+    ],
+    "framework_tutorials": [
+      {
+        "title": "PyTorch Tutorial: Neural Networks",
+        "url": "https://pytorch.org/tutorials/beginner/blitz/neural_networks_tutorial.html",
+        "type": "official_tutorial",
+        "difficulty": "beginner",
+        "why_valuable": "Official introduction to building neural networks in PyTorch."
+      },
+      {
+        "title": "TensorFlow/Keras Neural Network Tutorial",
+        "url": "https://www.tensorflow.org/tutorials/keras/classification",
+        "type": "official_tutorial",
+        "difficulty": "beginner",
+        "why_valuable": "High-level introduction to neural networks using Keras."
+      }
+    ]
+  },
+  "assessment_resources": {
+    "practice_problems": [
+      {
+        "title": "CS231n Assignments",
+        "url": "http://cs231n.stanford.edu/assignments.html",
+        "difficulty": "intermediate",
+        "why_valuable": "Hands-on assignments implementing neural networks from scratch."
+      },
+      {
+        "title": "Deep Learning Course Assignments",
+        "url": "https://www.coursera.org/specializations/deep-learning",
+        "platform": "Coursera",
+        "difficulty": "beginner",
+        "why_valuable": "Structured assignments with automatic grading."
+      }
+    ],
+    "conceptual_questions": [
+      {
+        "question": "Why do we need non-linear activation functions in neural networks?",
+        "difficulty": "beginner",
+        "hint": "Consider what happens when you compose linear functions."
+      },
+      {
+        "question": "How does the choice of activation function affect gradient flow during backpropagation?",
+        "difficulty": "intermediate",
+        "hint": "Think about the derivative of each activation function and the vanishing gradient problem."
+      },
+      {
+        "question": "Why is proper weight initialization crucial for training deep networks?",
+        "difficulty": "intermediate",
+        "hint": "Consider how gradients propagate through layers and what happens with poor initialization."
+      }
+    ]
+  },
+  "common_misconceptions": [
+    {
+      "misconception": "Neural networks are 'black boxes' that can't be understood",
+      "reality": "While complex, neural networks can be analyzed and interpreted using various techniques.",
+      "clarification": "Understanding comes from studying individual components (neurons, layers) and their interactions."
+    },
+    {
+      "misconception": "More layers always lead to better performance",
+      "reality": "Deeper networks can suffer from vanishing gradients and overfitting without proper techniques.",
+      "insight": "Depth helps with representational capacity but requires careful design and training."
+    },
+    {
+      "misconception": "Backpropagation is how the brain learns",
+      "reality": "Backpropagation is a mathematical algorithm; biological learning mechanisms are different.",
+      "clarification": "Neural networks are inspired by biology but use different computational principles."
+    },
+    {
+      "misconception": "You need to understand all the math to use neural networks",
+      "reality": "Basic understanding enables effective use; deep math knowledge helps with innovation and debugging.",
+      "balance": "Start with intuition, add mathematical depth as needed for your goals."
+    }
+  ],
+  "weekly_schedule": {
+    "day_1": {
+      "morning_theory": {
+        "primary": "3Blue1Brown Neural Networks Episode 1 (But what is a neural network?)",
+        "supplementary": "Michael Nielsen Chapter 1 introduction",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement artificial neuron and activation functions",
+        "supplementary": "Compare different activation functions visually",
+        "duration": "25 min"
+      }
+    },
+    "day_2": {
+      "morning_theory": {
+        "primary": "3Blue1Brown Episode 2 (Gradient descent)",
+        "supplementary": "Nielsen Chapter 1 forward propagation",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement forward propagation through networks",
+        "supplementary": "Test on simple examples and verify outputs",
+        "duration": "25 min"
+      }
+    },
+    "day_3": {
+      "morning_theory": {
+        "primary": "3Blue1Brown Episodes 3-4 (Backpropagation)",
+        "supplementary": "Christopher Olah backpropagation blog post",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement backpropagation algorithm",
+        "supplementary": "Verify with gradient checking",
+        "duration": "25 min"
+      }
+    },
+    "day_4": {
+      "morning_theory": {
+        "primary": "Karpathy's training recipe blog post",
+        "supplementary": "Deep Learning Book Chapter 6.1-6.2",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Build complete neural network training system",
+        "supplementary": "Apply to real datasets and analyze results",
+        "duration": "25 min"
+      }
+    }
+  },
+  "vault_unlock_conditions": {
+    "secret_archives": [
+      {
+        "item": "The Backpropagation Revolution That Almost Didn't Happen",
+        "unlock_condition": "Implement backpropagation from scratch",
+        "preview": "How backpropagation was independently discovered multiple times but ignored for decades..."
+      },
+      {
+        "item": "The XOR Problem That Broke AI",
+        "unlock_condition": "Build and train a neural network successfully",
+        "preview": "How a simple logical function exposed fundamental limitations and launched the quest for deeper networks..."
+      }
+    ],
+    "controversy_files": [
+      {
+        "item": "The Great Activation Wars: Sigmoid vs ReLU",
+        "unlock_condition": "Compare different activation functions",
+        "preview": "The heated debates about which activation function reigns supreme..."
+      },
+      {
+        "item": "When Gradient Checking Saved Deep Learning",
+        "unlock_condition": "Implement gradient checking successfully",
+        "preview": "How a simple debugging technique prevented countless research disasters..."
+      }
+    ],
+    "beautiful_mind": [
+      {
+        "item": "The Mathematical Poetry of Universal Approximation",
+        "unlock_condition": "Complete all neural network exercises",
+        "preview": "Why the universal approximation theorem is one of the most beautiful results in mathematics..."
+      },
+      {
+        "item": "The Elegant Dance of Forward and Backward Propagation",
+        "unlock_condition": "Master both forward and backward propagation",
+        "preview": "How the mathematical symmetry of neural network training reveals deep truths about computation..."
+      }
+    ]
+  },
+  "next_week_preview": {
+    "topic": "Gradient Descent Deep Dive and Advanced Optimization",
+    "connection": "Now that you understand how neural networks compute gradients, next week focuses on how to use those gradients effectively for training.",
+    "practical_bridge": "The backpropagation algorithm you've implemented produces gradients - next week you'll learn the best ways to follow those gradients to train your networks."
+  },
+  "career_impact": {
+    "why_critical": "Neural networks are the foundation of modern AI. Understanding how they work mathematically separates practitioners who can innovate from those who can only apply existing tools.",
+    "industry_applications": [
+      "Building custom neural architectures for specific problems",
+      "Debugging training issues and optimization problems",
+      "Implementing efficient training pipelines",
+      "Contributing to deep learning research and development",
+      "Understanding and improving existing models",
+      "Designing domain-specific AI solutions"
+    ],
+    "research_connections": [
+      "Foundation for understanding any neural architecture",
+      "Essential for developing new activation functions and optimizers",
+      "Critical for neural architecture search and AutoML",
+      "Basis for understanding attention mechanisms and transformers"
+    ],
+    "competitive_advantage": "Deep understanding of neural network mathematics allows you to debug mysterious training problems, design better architectures, and contribute to cutting-edge research rather than just applying existing tools."
+  }
+}
