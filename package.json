@@ -1,16 +1,373 @@
 {
-  "name": "neural-odyssey",
+  "name": "neural-learning-web",
   "version": "1.0.0",
+  "description": "Neural Learning Web - Personal Machine Learning Learning Companion. A comprehensive, gamified platform for mastering machine learning from first principles through interactive lessons, coding challenges, and a reward-based vault system.",
   "private": true,
-  "scripts": {
-    "start:backend": "cd backend && npm install && npm start",
-    "start:frontend": "cd frontend && npm install && npm run dev",
-    "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
+  "main": "backend/app.js",
+  "type": "commonjs",
+  "keywords": [
+    "machine-learning",
+    "education",
+    "personal-learning",
+    "gamification",
+    "neural-networks",
+    "ai-education",
+    "interactive-learning",
+    "coding-challenges",
+    "vault-system",
+    "progress-tracking",
+    "skill-development",
+    "mathematics",
+    "python",
+    "data-science",
+    "deep-learning",
+    "web-application",
+    "single-user",
+    "offline-capable"
+  ],
+  "author": {
+    "name": "Neural Explorer",
+    "email": "explorer@neural-odyssey.local",
+    "url": "https://github.com/abhisinghal21/neural-odyssey"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.0"
+  "license": "MIT",
+  "homepage": "https://github.com/abhisinghal21/neural-odyssey#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhisinghal21/neural-odyssey.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abhisinghal21/neural-odyssey/issues"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" --names \"API,WEB\" --prefix-colors \"blue,green\"",
+    "start": "npm run dev",
+    "dev:frontend": "cd frontend && npm install && npm run dev",
+    "dev:backend": "cd backend && npm install && npm run dev",
+    "start:frontend": "cd frontend && npm install && npm run dev",
+    "start:backend": "cd backend && npm install && npm start",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:production": "NODE_ENV=production npm run build",
+    "preview": "npm run build && npm run preview:frontend",
+    "preview:frontend": "cd frontend && npm run preview",
+    "test": "npm run test:frontend && npm run test:backend",
+    "test:frontend": "cd frontend && npm run test",
+    "test:backend": "cd backend && npm run test",
+    "test:watch": "concurrently \"npm run test:frontend -- --watch\" \"npm run test:backend -- --watch\"",
+    "test:coverage": "npm run test:frontend -- --coverage && npm run test:backend -- --coverage",
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:fix": "npm run lint:frontend -- --fix && npm run lint:backend -- --fix",
+    "format": "npm run format:frontend && npm run format:backend",
+    "format:frontend": "cd frontend && npm run format",
+    "format:backend": "cd backend && npm run format",
+    "format:check": "npm run format:frontend -- --check && npm run format:backend -- --check",
+    "clean": "npm run clean:frontend && npm run clean:backend && npm run clean:root",
+    "clean:frontend": "cd frontend && rm -rf dist node_modules/.vite",
+    "clean:backend": "cd backend && rm -rf dist node_modules/.cache",
+    "clean:root": "rm -rf node_modules",
+    "clean:all": "npm run clean && npm run clean:data",
+    "clean:data": "rm -rf data/user-progress.sqlite backups/* exports/*",
+    "install:all": "npm install && npm run install:frontend && npm run install:backend",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "update:all": "npm update && npm run update:frontend && npm run update:backend",
+    "update:frontend": "cd frontend && npm update",
+    "update:backend": "cd backend && npm update",
+    "setup": "npm run install:all && npm run setup:env && npm run setup:db",
+    "setup:env": "cp .env.example .env 2>/dev/null || echo 'Please create .env file manually'",
+    "setup:db": "npm run db:init",
+    "setup:dev": "npm run setup && npm run dev",
+    "db:init": "cd backend && npm run init-db",
+    "db:backup": "cd backend && npm run backup",
+    "db:reset": "rm -f data/user-progress.sqlite && npm run db:init",
+    "db:migrate": "echo 'Database migrations not implemented yet'",
+    "db:seed": "echo 'Database seeding handled by init-db script'",
+    "export:portfolio": "cd backend && npm run export-portfolio",
+    "export:data": "npm run export:portfolio",
+    "backup:all": "npm run db:backup && npm run backup:content",
+    "backup:content": "tar -czf backups/content-backup-$(date +%Y%m%d_%H%M%S).tar.gz content/",
+    "health:check": "curl -f http://localhost:3001/health && curl -f http://localhost:3000/",
+    "logs:frontend": "cd frontend && npm run logs",
+    "logs:backend": "cd backend && npm run logs",
+    "analyze": "npm run analyze:frontend",
+    "analyze:frontend": "cd frontend && npm run analyze",
+    "security:audit": "npm audit && npm run security:audit:frontend && npm run security:audit:backend",
+    "security:audit:frontend": "cd frontend && npm audit",
+    "security:audit:backend": "cd backend && npm audit",
+    "security:fix": "npm audit fix && npm run security:fix:frontend && npm run security:fix:backend",
+    "security:fix:frontend": "cd frontend && npm audit fix",
+    "security:fix:backend": "cd backend && npm audit fix",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docs:serve": "echo 'Documentation server not implemented'",
+    "docs:build": "echo 'Documentation build not implemented'",
+    "storybook": "cd frontend && npm run storybook",
+    "storybook:build": "cd frontend && npm run build-storybook",
+    "e2e": "echo 'End-to-end tests not implemented'",
+    "e2e:headed": "echo 'Headed e2e tests not implemented'",
+    "performance": "echo 'Performance testing not implemented'",
+    "benchmark": "echo 'Benchmarking not implemented'",
+    "deploy:staging": "echo 'Staging deployment not configured'",
+    "deploy:production": "echo 'Production deployment not configured'",
+    "validate": "npm run lint && npm run test && npm run build",
+    "precommit": "npm run lint:fix && npm run format && npm run test",
+    "prepush": "npm run validate",
+    "postinstall": "echo 'Neural Learning Web setup complete. Run npm run setup for first-time initialization.'",
+    "version:patch": "npm version patch && git push && git push --tags",
+    "version:minor": "npm version minor && git push && git push --tags",
+    "version:major": "npm version major && git push && git push --tags",
+    "release": "npm run validate && npm run version:patch",
+    "release:minor": "npm run validate && npm run version:minor",
+    "release:major": "npm run validate && npm run version:major",
+    "stats": "echo 'Project Statistics:' && echo 'Frontend LOC:' && find frontend/src -name '*.jsx' -o -name '*.js' -o -name '*.ts' -o -name '*.tsx' | xargs wc -l | tail -1 && echo 'Backend LOC:' && find backend -name '*.js' -o -name '*.ts' | xargs wc -l | tail -1",
+    "debug": "npm run debug:backend",
+    "debug:frontend": "cd frontend && npm run debug",
+    "debug:backend": "cd backend && npm run debug",
+    "profiling": "echo 'Profiling tools not configured'",
+    "monitor": "echo 'Monitoring not configured'"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1",
+    "cross-env": "^7.0.3",
+    "nodemon": "^3.0.2",
+    "rimraf": "^5.0.5",
+    "wait-on": "^7.2.0",
+    "kill-port": "^2.0.1",
+    "npm-run-all": "^4.1.5"
+  },
+  "dependencies": {},
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "config": {
+    "frontend_port": "3000",
+    "backend_port": "3001",
+    "api_url": "http://localhost:3001",
+    "db_path": "./data/user-progress.sqlite"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "cd frontend && npm run lint:fix",
+      "cd frontend && npm run format"
+    ],
+    "backend/**/*.{js,ts}": [
+      "cd backend && npm run lint:fix",
+      "cd backend && npm run format"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
+      "pre-push": "npm run validate"
+    }
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "type-enum": [
+        2,
+        "always",
+        [
+          "feat",
+          "fix",
+          "docs",
+          "style",
+          "refactor",
+          "perf",
+          "test",
+          "build",
+          "ci",
+          "chore",
+          "revert",
+          "content",
+          "vault",
+          "quest",
+          "analytics"
+        ]
+      ],
+      "scope-enum": [
+        2,
+        "always",
+        [
+          "frontend",
+          "backend",
+          "database",
+          "vault",
+          "quests",
+          "analytics",
+          "auth",
+          "api",
+          "ui",
+          "config",
+          "docs",
+          "deps",
+          "security",
+          "performance",
+          "accessibility",
+          "mobile",
+          "desktop"
+        ]
+      ]
+    }
+  },
+  "jest": {
+    "projects": [
+      "<rootDir>/frontend",
+      "<rootDir>/backend"
+    ]
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "eslint:recommended"
+    ],
+    "env": {
+      "node": true,
+      "es2022": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 2022,
+      "sourceType": "module"
+    },
+    "rules": {
+      "no-console": "off",
+      "no-unused-vars": [
+        "warn",
+        {
+          "argsIgnorePattern": "^_"
+        }
+      ]
+    }
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2,
+    "useTabs": false,
+    "endOfLine": "lf",
+    "bracketSpacing": true,
+    "arrowParens": "avoid"
+  },
+  "packageManager": "npm@9.0.0",
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/abhisinghal21"
+  },
+  "contributors": [
+    {
+      "name": "Neural Explorer",
+      "email": "explorer@neural-odyssey.local",
+      "role": "Lead Developer"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "Neural Explorer",
+      "email": "explorer@neural-odyssey.local"
+    }
+  ],
+  "files": [
+    "frontend/",
+    "backend/",
+    "content/",
+    "data/",
+    "scripts/",
+    "docs/",
+    "README.md",
+    "LICENSE",
+    ".env.example"
+  ],
+  "directories": {
+    "lib": "backend",
+    "doc": "docs",
+    "test": "tests",
+    "example": "examples"
+  },
+  "preferGlobal": false,
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "volta": {
+    "node": "18.19.0",
+    "npm": "10.2.3"
+  },
+  "overrides": {
+    "axios": "^1.6.0",
+    "semver": "^7.5.4"
+  },
+  "peerDependencies": {},
+  "optionalDependencies": {},
+  "bundleDependencies": [],
+  "resolutions": {
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4"
+  },
+  "nyc": {
+    "exclude": [
+      "**/*.spec.js",
+      "**/*.test.js",
+      "**/node_modules/**",
+      "**/coverage/**"
+    ]
+  },
+  "standard": {
+    "env": [
+      "jest"
+    ]
+  },
+  "ava": {
+    "files": [
+      "tests/**/*.test.js"
+    ]
+  },
+  "mocha": {
+    "require": [
+      "test/setup.js"
+    ]
   }
 }
