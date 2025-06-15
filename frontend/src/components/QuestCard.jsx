@@ -1,432 +1,705 @@
-import { useState } from 'react';
+/**
+ * Neural Odyssey Quest Card Component
+ *
+ * Interactive card component for displaying individual quests/projects in the
+ * gamified learning system. Shows quest information, progress, requirements,
+ * and provides action buttons for quest interaction.
+ *
+ * Features:
+ * - Quest type visualization with icons and colors
+ * - Difficulty indicators and time estimates
+ * - Prerequisites and unlock status
+ * - Progress tracking and completion states
+ * - Skill point rewards and achievements
+ * - Interactive actions (start, continue, complete)
+ * - Responsive design with hover effects
+ * - Integration with learning progress
+ *
+ * Author: Neural Explorer
+ */
+
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Code, 
-  BookOpen, 
-  Target, 
-  Wrench, 
-  Clock, 
-  Star, 
-  Trophy, 
-  Play, 
-  CheckCircle,
-  AlertCircle,
-  Lightbulb,
-  Award,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink
-} from 'lucide-react';
 import { useMutation, useQueryClient } from 'react-query';
-import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import {
+    Code,
+    Target,
+    BookOpen,
+    Lightbulb,
+    Lock,
+    Unlock,
+    Play,
+    CheckCircle,
+    Clock,
+    Star,
+    Trophy,
+    Zap,
+    Award,
+    ChevronRight,
+    Eye,
+    Brain,
+    Flame,
+    Sparkles,
+    AlertCircle,
+    Info,
+    ExternalLink,
+    Download,
+    Upload,
+    BarChart3,
+    TrendingUp,
+    Layers,
+    Settings,
+    Users,
+    Calendar
+} from 'lucide-react';
 import { api } from '../utils/api';
+import toast from 'react-hot-toast';
 
-const QuestCard = ({ quest, onStart, className = '' }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [showHints, setShowHints] = useState(false);
-  const queryClient = useQueryClient();
+const QuestCard = ({ 
+    quest, 
+    className = '', 
+    size = 'medium', // 'small' | 'medium' | 'large'
+    showProgress = true,
+    onClick,
+    onStart,
+    onContinue,
+    onComplete
+}) => {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [showDetails, setShowDetails] = useState(false);
 
-  // Get quest type icon and styling
-  const getQuestTypeInfo = (type) => {
-    switch (type) {
-      case 'coding_exercise':
-        return {
-          icon: Code,
-          label: 'Coding Exercise',
-          color: 'text-blue-400',
-          bgColor: 'bg-blue-400/10',
-          borderColor: 'border-blue-400/30'
+    // Quest completion mutation
+    const startQuestMutation = useMutation(
+        (questData) => api.post('/learning/quests', questData),
+        {
+            onSuccess: (data) => {
+                toast.success('Quest started successfully!');
+                queryClient.invalidateQueries(['quests']);
+                queryClient.invalidateQueries(['learningProgress']);
+                if (onStart) onStart(quest, data);
+            },
+            onError: (error) => {
+                toast.error(error.response?.data?.message || 'Failed to start quest');
+            }
+        }
+    );
+
+    // Quest type configuration
+    const questTypes = {
+        coding_exercise: {
+            name: 'Coding Exercise',
+            icon: Code,
+            color: 'from-green-500 to-green-600',
+            lightColor: 'bg-green-100',
+            description: 'Hands-on programming challenge',
+            difficulty: 'Technical Implementation'
+        },
+        implementation_project: {
+            name: 'Implementation Project',
+            icon: Layers,
+            color: 'from-blue-500 to-blue-600',
+            lightColor: 'bg-blue-100',
+            description: 'Complex multi-part project',
+            difficulty: 'System Building'
+        },
+        theory_quiz: {
+            name: 'Theory Quiz',
+            icon: BookOpen,
+            color: 'from-purple-500 to-purple-600',
+            lightColor: 'bg-purple-100',
+            description: 'Knowledge validation',
+            difficulty: 'Conceptual Understanding'
+        },
+        practical_application: {
+            name: 'Practical Application',
+            icon: Target,
+            color: 'from-orange-500 to-orange-600',
+            lightColor: 'bg-orange-100',
+            description: 'Real-world problem solving',
+            difficulty: 'Applied Learning'
+        }
+    };
+
+    // Difficulty configuration
+    const difficultyConfig = {
+        beginner: {
+            label: 'Beginner',
+            color: 'text-green-400',
+            bgColor: 'bg-green-500 bg-opacity-20',
+            stars: 1
+        },
+        intermediate: {
+            label: 'Intermediate',
+            color: 'text-yellow-400',
+            bgColor: 'bg-yellow-500 bg-opacity-20',
+            stars: 2
+        },
+        advanced: {
+            label: 'Advanced',
+            color: 'text-orange-400',
+            bgColor: 'bg-orange-500 bg-opacity-20',
+            stars: 3
+        },
+        expert: {
+            label: 'Expert',
+            color: 'text-red-400',
+            bgColor: 'bg-red-500 bg-opacity-20',
+            stars: 4
+        }
+    };
+
+    // Status configuration
+    const statusConfig = {
+        locked: {
+            label: 'Locked',
+            color: 'text-gray-400',
+            bgColor: 'bg-gray-500 bg-opacity-20',
+            icon: Lock
+        },
+        available: {
+            label: 'Available',
+            color: 'text-blue-400',
+            bgColor: 'bg-blue-500 bg-opacity-20',
+            icon: Unlock
+        },
+        in_progress: {
+            label: 'In Progress',
+            color: 'text-yellow-400',
+            bgColor: 'bg-yellow-500 bg-opacity-20',
+            icon: Clock
+        },
+        attempted: {
+            label: 'Attempted',
+            color: 'text-orange-400',
+            bgColor: 'bg-orange-500 bg-opacity-20',
+            icon: Play
+        },
+        completed: {
+            label: 'Completed',
+            color: 'text-green-400',
+            bgColor: 'bg-green-500 bg-opacity-20',
+            icon: CheckCircle
+        },
+        mastered: {
+            label: 'Mastered',
+            color: 'text-purple-400',
+            bgColor: 'bg-purple-500 bg-opacity-20',
+            icon: Trophy
+        }
+    };
+
+    // Get quest configuration
+    const questConfig = questTypes[quest.type] || questTypes.coding_exercise;
+    const difficultyInfo = difficultyConfig[quest.difficulty] || difficultyConfig.beginner;
+    const statusInfo = statusConfig[quest.status] || statusConfig.available;
+
+    // Size configuration
+    const sizeConfig = {
+        small: {
+            cardClass: 'p-4',
+            titleClass: 'text-base',
+            descriptionClass: 'text-sm',
+            iconSize: 'w-5 h-5',
+            buttonClass: 'px-3 py-1 text-sm'
+        },
+        medium: {
+            cardClass: 'p-6',
+            titleClass: 'text-lg',
+            descriptionClass: 'text-sm',
+            iconSize: 'w-6 h-6',
+            buttonClass: 'px-4 py-2'
+        },
+        large: {
+            cardClass: 'p-8',
+            titleClass: 'text-xl',
+            descriptionClass: 'text-base',
+            iconSize: 'w-8 h-8',
+            buttonClass: 'px-6 py-3 text-lg'
+        }
+    };
+
+    const sizeInfo = sizeConfig[size];
+
+    // Calculate estimated reward points
+    const calculateRewardPoints = () => {
+        const basePoints = {
+            coding_exercise: 15,
+            implementation_project: 25,
+            theory_quiz: 10,
+            practical_application: 20
         };
-      case 'implementation_project':
-        return {
-          icon: Wrench,
-          label: 'Implementation Project',
-          color: 'text-green-400',
-          bgColor: 'bg-green-400/10',
-          borderColor: 'border-green-400/30'
+
+        const difficultyMultiplier = {
+            beginner: 1,
+            intermediate: 1.5,
+            advanced: 2,
+            expert: 3
         };
-      case 'theory_quiz':
-        return {
-          icon: BookOpen,
-          label: 'Theory Quiz',
-          color: 'text-purple-400',
-          bgColor: 'bg-purple-400/10',
-          borderColor: 'border-purple-400/30'
-        };
-      case 'practical_application':
-        return {
-          icon: Target,
-          label: 'Practical Application',
-          color: 'text-orange-400',
-          bgColor: 'bg-orange-400/10',
-          borderColor: 'border-orange-400/30'
-        };
-      default:
-        return {
-          icon: Target,
-          label: 'Quest',
-          color: 'text-gray-400',
-          bgColor: 'bg-gray-400/10',
-          borderColor: 'border-gray-400/30'
-        };
-    }
-  };
 
-  // Get difficulty stars
-  const getDifficultyStars = (level) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-3 h-3 ${
-          i < level 
-            ? 'fill-yellow-400 text-yellow-400' 
-            : 'text-gray-600'
-        }`}
-      />
-    ));
-  };
+        return Math.round((basePoints[quest.type] || 15) * (difficultyMultiplier[quest.difficulty] || 1));
+    };
 
-  // Get status styling
-  const getStatusInfo = (status) => {
-    switch (status) {
-      case 'completed':
-        return {
-          icon: CheckCircle,
-          label: 'Completed',
-          color: 'text-green-400',
-          bgColor: 'bg-green-400/10'
-        };
-      case 'mastered':
-        return {
-          icon: Trophy,
-          label: 'Mastered',
-          color: 'text-yellow-400',
-          bgColor: 'bg-yellow-400/10'
-        };
-      case 'attempted':
-        return {
-          icon: AlertCircle,
-          label: 'Attempted',
-          color: 'text-orange-400',
-          bgColor: 'bg-orange-400/10'
-        };
-      default:
-        return {
-          icon: Play,
-          label: 'Available',
-          color: 'text-blue-400',
-          bgColor: 'bg-blue-400/10'
-        };
-    }
-  };
+    // Handle quest action based on status
+    const handleQuestAction = () => {
+        if (onClick) {
+            onClick(quest);
+            return;
+        }
 
-  // Format estimated time
-  const formatTime = (minutes) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
+        switch (quest.status) {
+            case 'locked':
+                // Show requirements
+                setShowDetails(true);
+                break;
+            case 'available':
+                // Start quest
+                if (onStart) {
+                    onStart(quest);
+                } else {
+                    navigate(`/quest/${quest.id}`);
+                }
+                break;
+            case 'in_progress':
+            case 'attempted':
+                // Continue quest
+                if (onContinue) {
+                    onContinue(quest);
+                } else {
+                    navigate(`/quest/${quest.id}`);
+                }
+                break;
+            case 'completed':
+            case 'mastered':
+                // View results
+                navigate(`/quest/${quest.id}/results`);
+                break;
+            default:
+                navigate(`/quest/${quest.id}`);
+        }
+    };
 
-  // Submit quest mutation
-  const submitQuestMutation = useMutation(
-    (questData) => api.post('/learning/quests/submit', questData),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries('quests');
-        queryClient.invalidateQueries('learningProgress');
-        toast.success('Quest submitted successfully!');
-      },
-      onError: (error) => {
-        toast.error('Failed to submit quest: ' + error.message);
-      }
-    }
-  );
+    // Get action button text and style
+    const getActionButton = () => {
+        switch (quest.status) {
+            case 'locked':
+                return {
+                    text: 'View Requirements',
+                    icon: Info,
+                    variant: 'secondary'
+                };
+            case 'available':
+                return {
+                    text: 'Start Quest',
+                    icon: Play,
+                    variant: 'primary'
+                };
+            case 'in_progress':
+            case 'attempted':
+                return {
+                    text: 'Continue',
+                    icon: ChevronRight,
+                    variant: 'primary'
+                };
+            case 'completed':
+                return {
+                    text: 'View Results',
+                    icon: Eye,
+                    variant: 'success'
+                };
+            case 'mastered':
+                return {
+                    text: 'Mastered!',
+                    icon: Trophy,
+                    variant: 'gold'
+                };
+            default:
+                return {
+                    text: 'View Quest',
+                    icon: ChevronRight,
+                    variant: 'secondary'
+                };
+        }
+    };
 
-  const typeInfo = getQuestTypeInfo(quest.type);
-  const statusInfo = getStatusInfo(quest.status);
-  const TypeIcon = typeInfo.icon;
-  const StatusIcon = statusInfo.icon;
+    const actionButton = getActionButton();
+    const QuestIcon = questConfig.icon;
+    const StatusIcon = statusInfo.icon;
+    const ActionIcon = actionButton.icon;
 
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className={`quest-card bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-all duration-300 ${className}`}
-    >
-      {/* Header */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${typeInfo.bgColor} ${typeInfo.borderColor} border`}>
-              <TypeIcon className={`w-5 h-5 ${typeInfo.color}`} />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white text-lg leading-tight">
-                {quest.title}
-              </h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`text-sm ${typeInfo.color}`}>
-                  {typeInfo.label}
-                </span>
-                <span className="text-gray-400 text-sm">•</span>
-                <span className="text-gray-400 text-sm">
-                  Phase {quest.phase} - Week {quest.week}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Status Badge */}
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${statusInfo.bgColor}`}>
-            <StatusIcon className={`w-3 h-3 ${statusInfo.color}`} />
-            <span className={`text-xs font-medium ${statusInfo.color}`}>
-              {statusInfo.label}
-            </span>
-          </div>
-        </div>
-
-        {/* Description */}
-        <p className="text-gray-300 text-sm leading-relaxed mb-4">
-          {quest.description}
-        </p>
-
-        {/* Quest Metadata */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            {/* Difficulty */}
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-xs">Difficulty:</span>
-              <div className="flex items-center gap-1">
-                {getDifficultyStars(quest.difficulty_level)}
-              </div>
-            </div>
-
-            {/* Estimated Time */}
-            <div className="flex items-center gap-1">
-              <Clock className="w-3 h-3 text-gray-400" />
-              <span className="text-gray-400 text-xs">
-                {formatTime(quest.estimated_time_minutes)}
-              </span>
-            </div>
-
-            {/* Points Reward */}
-            <div className="flex items-center gap-1">
-              <Award className="w-3 h-3 text-yellow-400" />
-              <span className="text-yellow-400 text-xs">
-                {quest.difficulty_level * 15}pts
-              </span>
-            </div>
-          </div>
-
-          {/* Expand Button */}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-        </div>
-
-        {/* Learning Objectives */}
-        {quest.learning_objectives && quest.learning_objectives.length > 0 && (
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-              <Target className="w-3 h-3" />
-              Learning Objectives
-            </h4>
-            <ul className="space-y-1">
-              {quest.learning_objectives.slice(0, isExpanded ? undefined : 2).map((objective, index) => (
-                <li key={index} className="text-xs text-gray-400 flex items-start gap-2">
-                  <span className="text-blue-400 mt-1">•</span>
-                  <span>{objective}</span>
-                </li>
-              ))}
-              {!isExpanded && quest.learning_objectives.length > 2 && (
-                <li className="text-xs text-gray-500">
-                  +{quest.learning_objectives.length - 2} more objectives...
-                </li>
-              )}
-            </ul>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onStart && onStart(quest)}
-            disabled={submitQuestMutation.isLoading}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Play className="w-4 h-4" />
-            {quest.status === 'completed' || quest.status === 'mastered' ? 'Review Quest' : 'Start Quest'}
-          </button>
-
-          {quest.hints && quest.hints.length > 0 && (
-            <button
-              onClick={() => setShowHints(!showHints)}
-              className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm transition-colors flex items-center gap-1"
-            >
-              <Lightbulb className="w-4 h-4" />
-              Hints
-            </button>
-          )}
-
-          {quest.resources && quest.resources.length > 0 && (
-            <button className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm transition-colors">
-              <ExternalLink className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Expanded Content */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="border-t border-gray-700"
-          >
-            <div className="p-4 space-y-4">
-              {/* Starter Code Preview */}
-              {quest.starter_code && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                    <Code className="w-3 h-3" />
-                    Starter Code Preview
-                  </h4>
-                  <div className="bg-gray-900 rounded-lg p-3 overflow-x-auto">
-                    <pre className="text-xs text-gray-300 font-mono">
-                      {quest.starter_code.split('\n').slice(0, 10).join('\n')}
-                      {quest.starter_code.split('\n').length > 10 && '\n...'}
-                    </pre>
-                  </div>
-                </div>
-              )}
-
-              {/* Test Cases */}
-              {quest.test_cases && quest.test_cases.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-3 h-3" />
-                    Test Cases ({quest.test_cases.length})
-                  </h4>
-                  <div className="text-xs text-gray-400">
-                    Your solution will be validated against {quest.test_cases.length} test cases
-                  </div>
-                </div>
-              )}
-
-              {/* Tags */}
-              {quest.tags && quest.tags.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-300 mb-2">Tags</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {quest.tags.map((tag, index) => (
-                      <span
+    // Render difficulty stars
+    const renderDifficultyStars = () => {
+        return (
+            <div className="flex items-center space-x-1">
+                {[...Array(4)].map((_, index) => (
+                    <Star
                         key={index}
-                        className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Prerequisites */}
-              {quest.prerequisites && quest.prerequisites.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                    <AlertCircle className="w-3 h-3" />
-                    Prerequisites
-                  </h4>
-                  <ul className="space-y-1">
-                    {quest.prerequisites.map((prereq, index) => (
-                      <li key={index} className="text-xs text-gray-400 flex items-center gap-2">
-                        <CheckCircle className="w-3 h-3 text-green-400" />
-                        {prereq}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Hints Panel */}
-      <AnimatePresence>
-        {showHints && quest.hints && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="border-t border-gray-700 bg-yellow-500/5"
-          >
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="w-4 h-4 text-yellow-400" />
-                <h4 className="text-sm font-medium text-yellow-400">Helpful Hints</h4>
-              </div>
-              <div className="space-y-2">
-                {quest.hints.map((hint, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <span className="text-yellow-400 text-sm font-bold mt-0.5">
-                      {index + 1}.
-                    </span>
-                    <p className="text-sm text-gray-300">{hint}</p>
-                  </div>
+                        className={`w-3 h-3 ${
+                            index < difficultyInfo.stars
+                                ? `${difficultyInfo.color} fill-current`
+                                : 'text-gray-600'
+                        }`}
+                    />
                 ))}
-              </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        );
+    };
 
-      {/* Completion Stats (if completed) */}
-      {(quest.status === 'completed' || quest.status === 'mastered') && quest.completed_at && (
-        <div className="px-4 pb-4">
-          <div className="bg-gray-900/50 rounded-lg p-3 mt-2">
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-4">
-                <span className="text-gray-400">
-                  Completed: {new Date(quest.completed_at).toLocaleDateString()}
-                </span>
-                {quest.time_to_complete_minutes && (
-                  <span className="text-gray-400">
-                    Time: {formatTime(quest.time_to_complete_minutes)}
-                  </span>
-                )}
-                {quest.attempts_count && (
-                  <span className="text-gray-400">
-                    Attempts: {quest.attempts_count}
-                  </span>
-                )}
-              </div>
-              {quest.status === 'mastered' && (
-                <div className="flex items-center gap-1 text-yellow-400">
-                  <Trophy className="w-3 h-3" />
-                  <span className="text-xs font-medium">Mastered</span>
+    // Render prerequisites
+    const renderPrerequisites = () => {
+        if (!quest.prerequisites || quest.prerequisites.length === 0) return null;
+
+        return (
+            <div className="mt-4 pt-4 border-t border-gray-700">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">Prerequisites:</h4>
+                <div className="space-y-1">
+                    {quest.prerequisites.map((prereq, index) => (
+                        <div key={index} className="flex items-center space-x-2 text-xs text-gray-400">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>{prereq}</span>
+                        </div>
+                    ))}
                 </div>
-              )}
             </div>
-          </div>
-        </div>
-      )}
-    </motion.div>
-  );
+        );
+    };
+
+    // Render learning objectives
+    const renderLearningObjectives = () => {
+        if (!quest.learningObjectives || quest.learningObjectives.length === 0) return null;
+
+        return (
+            <div className="mt-4">
+                <h4 className="text-sm font-medium text-gray-300 mb-2">Learning Objectives:</h4>
+                <ul className="space-y-1">
+                    {quest.learningObjectives.slice(0, isExpanded ? undefined : 3).map((objective, index) => (
+                        <li key={index} className="flex items-start space-x-2 text-xs text-gray-400">
+                            <Target className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                            <span>{objective}</span>
+                        </li>
+                    ))}
+                </ul>
+                {quest.learningObjectives.length > 3 && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsExpanded(!isExpanded);
+                        }}
+                        className="mt-2 text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1"
+                    >
+                        <span>{isExpanded ? 'Show Less' : `+${quest.learningObjectives.length - 3} more`}</span>
+                    </button>
+                )}
+            </div>
+        );
+    };
+
+    // Render progress bar (if applicable)
+    const renderProgress = () => {
+        if (!showProgress || !quest.progress) return null;
+
+        return (
+            <div className="mt-4">
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs text-gray-400">Progress</span>
+                    <span className="text-xs text-gray-300">{Math.round(quest.progress * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-1.5">
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${quest.progress * 100}%` }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className={`h-1.5 rounded-full bg-gradient-to-r ${questConfig.color}`}
+                    />
+                </div>
+            </div>
+        );
+    };
+
+    // Render tags
+    const renderTags = () => {
+        if (!quest.tags || quest.tags.length === 0) return null;
+
+        return (
+            <div className="flex flex-wrap gap-1 mt-3">
+                {quest.tags.slice(0, 3).map((tag, index) => (
+                    <span
+                        key={index}
+                        className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded"
+                    >
+                        {tag}
+                    </span>
+                ))}
+                {quest.tags.length > 3 && (
+                    <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
+                        +{quest.tags.length - 3}
+                    </span>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <>
+            <motion.div
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                className={`
+                    relative bg-gray-800 rounded-xl border border-gray-700 cursor-pointer
+                    hover:border-gray-600 hover:shadow-xl transition-all duration-300
+                    ${quest.status === 'locked' ? 'opacity-75' : ''}
+                    ${className}
+                `}
+                onClick={handleQuestAction}
+            >
+                {/* Background Pattern */}
+                <div className={`
+                    absolute inset-0 bg-gradient-to-br ${questConfig.color} opacity-5 rounded-xl
+                `} />
+
+                {/* Content */}
+                <div className={`relative ${sizeInfo.cardClass}`}>
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-start space-x-3">
+                            {/* Quest Icon */}
+                            <div className={`
+                                p-3 rounded-lg bg-gradient-to-br ${questConfig.color}
+                                ${quest.status === 'locked' ? 'grayscale' : ''}
+                            `}>
+                                {quest.status === 'locked' ? (
+                                    <Lock className={`${sizeInfo.iconSize} text-white`} />
+                                ) : (
+                                    <QuestIcon className={`${sizeInfo.iconSize} text-white`} />
+                                )}
+                            </div>
+
+                            {/* Quest Info */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2 mb-1">
+                                    <h3 className={`font-bold text-white ${sizeInfo.titleClass} truncate`}>
+                                        {quest.title}
+                                    </h3>
+                                    {quest.isNew && (
+                                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                                            New
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-400 mb-2">{questConfig.name}</p>
+                                <p className={`text-gray-300 ${sizeInfo.descriptionClass} line-clamp-2`}>
+                                    {quest.description}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className={`
+                            flex items-center space-x-1 px-2 py-1 rounded-full ${statusInfo.bgColor}
+                        `}>
+                            <StatusIcon className={`w-3 h-3 ${statusInfo.color}`} />
+                            <span className={`text-xs font-medium ${statusInfo.color}`}>
+                                {statusInfo.label}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Meta Information */}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                            {/* Difficulty */}
+                            <div className="flex items-center space-x-1">
+                                {renderDifficultyStars()}
+                                <span className={`text-xs ${difficultyInfo.color}`}>
+                                    {difficultyInfo.label}
+                                </span>
+                            </div>
+
+                            {/* Time Estimate */}
+                            <div className="flex items-center space-x-1 text-gray-400">
+                                <Clock className="w-3 h-3" />
+                                <span className="text-xs">{quest.estimatedTime || 30}m</span>
+                            </div>
+
+                            {/* Phase/Week */}
+                            {quest.phase && quest.week && (
+                                <div className="flex items-center space-x-1 text-gray-400">
+                                    <Calendar className="w-3 h-3" />
+                                    <span className="text-xs">P{quest.phase}W{quest.week}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Reward Points */}
+                        <div className="flex items-center space-x-1 text-yellow-400">
+                            <Zap className="w-3 h-3" />
+                            <span className="text-xs font-medium">+{calculateRewardPoints()}</span>
+                        </div>
+                    </div>
+
+                    {/* Progress */}
+                    {renderProgress()}
+
+                    {/* Learning Objectives */}
+                    {renderLearningObjectives()}
+
+                    {/* Prerequisites (if locked) */}
+                    {quest.status === 'locked' && renderPrerequisites()}
+
+                    {/* Tags */}
+                    {renderTags()}
+
+                    {/* Action Buttons */}
+                    <div className="mt-6 pt-4 border-t border-gray-700">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                {/* Completion Stats (if completed) */}
+                                {(quest.status === 'completed' || quest.status === 'mastered') && quest.completedAt && (
+                                    <div className="flex items-center space-x-2 text-xs text-gray-400">
+                                        <CheckCircle className="w-3 h-3" />
+                                        <span>
+                                            Completed {new Date(quest.completedAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Attempts (if attempted) */}
+                                {quest.attemptsCount > 0 && (
+                                    <div className="flex items-center space-x-1 text-xs text-gray-400">
+                                        <BarChart3 className="w-3 h-3" />
+                                        <span>{quest.attemptsCount} attempts</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Action Button */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuestAction();
+                                }}
+                                disabled={startQuestMutation.isLoading}
+                                className={`
+                                    flex items-center space-x-2 ${sizeInfo.buttonClass} rounded-lg
+                                    font-medium transition-all duration-200 disabled:opacity-50
+                                    ${actionButton.variant === 'primary' 
+                                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                                        : actionButton.variant === 'success'
+                                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                                            : actionButton.variant === 'gold'
+                                                ? 'bg-yellow-500 hover:bg-yellow-600 text-black'
+                                                : 'bg-gray-600 hover:bg-gray-700 text-white'
+                                    }
+                                `}
+                            >
+                                <ActionIcon className="w-4 h-4" />
+                                <span>{actionButton.text}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Loading Overlay */}
+                    {startQuestMutation.isLoading && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-xl flex items-center justify-center">
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Mastery Glow Effect */}
+                {quest.status === 'mastered' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-yellow-500 opacity-20 rounded-xl animate-pulse" />
+                )}
+
+                {/* Achievement Indicators */}
+                {quest.achievements && quest.achievements.length > 0 && (
+                    <div className="absolute -top-2 -right-2">
+                        <div className="bg-yellow-500 rounded-full p-1">
+                            <Trophy className="w-4 h-4 text-white" />
+                        </div>
+                    </div>
+                )}
+            </motion.div>
+
+            {/* Quest Details Modal */}
+            <AnimatePresence>
+                {showDetails && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+                        onClick={() => setShowDetails(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-gray-900 rounded-xl p-6 max-w-md w-full border border-gray-700"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-center space-x-3">
+                                    <div className={`p-3 rounded-lg bg-gradient-to-br ${questConfig.color}`}>
+                                        <QuestIcon className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white">{quest.title}</h3>
+                                        <p className="text-sm text-gray-400">{questConfig.name}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowDetails(false)}
+                                    className="text-gray-400 hover:text-white"
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="space-y-4">
+                                <p className="text-gray-300">{quest.description}</p>
+                                
+                                {renderLearningObjectives()}
+                                {renderPrerequisites()}
+
+                                <div className="pt-4 border-t border-gray-700">
+                                    <button
+                                        onClick={() => {
+                                            setShowDetails(false);
+                                            if (quest.status !== 'locked') {
+                                                handleQuestAction();
+                                            }
+                                        }}
+                                        className={`
+                                            w-full py-2 px-4 rounded-lg font-medium transition-colors
+                                            ${quest.status === 'locked'
+                                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                            }
+                                        `}
+                                        disabled={quest.status === 'locked'}
+                                    >
+                                        {quest.status === 'locked' ? 'Complete Prerequisites First' : actionButton.text}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
+    );
 };
 
 export default QuestCard;

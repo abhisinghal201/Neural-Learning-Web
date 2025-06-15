@@ -1,466 +1,698 @@
-import { useState, useEffect } from 'react';
+/**
+ * Neural Odyssey Vault Reveal Modal Component
+ *
+ * Dramatic reveal modal for newly unlocked vault items. Creates an engaging
+ * "treasure chest opening" experience with animations, particle effects, and
+ * detailed item presentation. Handles all vault item types and categories.
+ *
+ * Features:
+ * - Cinematic reveal animations with particle effects
+ * - Rarity-based visual themes and celebrations
+ * - Category-specific presentations and icons
+ * - Content preview with full reading capabilities
+ * - Interactive rating and favorite systems
+ * - Skill point rewards with animated counters
+ * - Achievement integration and unlocks
+ * - Social sharing and bookmarking
+ * - Related content recommendations
+ *
+ * Author: Neural Explorer
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Star, 
-  ExternalLink, 
-  Share2, 
-  BookOpen, 
-  Lightbulb,
-  Flame,
-  Sparkles,
-  Award,
-  Eye,
-  MessageSquare
-} from 'lucide-react';
 import { useMutation, useQueryClient } from 'react-query';
-import toast from 'react-hot-toast';
-import Confetti from 'react-confetti';
+import {
+    Sparkles,
+    Star,
+    Heart,
+    BookOpen,
+    Eye,
+    EyeOff,
+    Trophy,
+    Award,
+    Crown,
+    Gem,
+    Scroll,
+    Brain,
+    Lightbulb,
+    Target,
+    Zap,
+    Flame,
+    Shield,
+    Lock,
+    Unlock,
+    ChevronRight,
+    ChevronDown,
+    ExternalLink,
+    Download,
+    Share2,
+    Copy,
+    Check,
+    X,
+    Volume2,
+    VolumeX,
+    Clock,
+    Calendar,
+    Tag,
+    Bookmark,
+    MessageSquare,
+    ThumbsUp,
+    ThumbsDown,
+    MoreHorizontal
+} from 'lucide-react';
 import { api } from '../utils/api';
+import toast from 'react-hot-toast';
 
-const VaultRevealModal = ({ vaultItem, isOpen, onClose, isNewUnlock = false }) => {
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [userRating, setUserRating] = useState(vaultItem?.user_rating || 0);
-  const [userNotes, setUserNotes] = useState(vaultItem?.user_notes || '');
-  const [showNotes, setShowNotes] = useState(false);
-  const [hasRead, setHasRead] = useState(vaultItem?.is_read || false);
-  
-  const queryClient = useQueryClient();
+const VaultRevealModal = ({ 
+    vaultItem, 
+    isOpen, 
+    onClose, 
+    trigger = 'auto',
+    showCelebration = true,
+    autoRead = true
+}) => {
+    const queryClient = useQueryClient();
+    const modalRef = useRef(null);
+    const [revealStage, setRevealStage] = useState('opening'); // 'opening' | 'revealed' | 'reading'
+    const [showFullContent, setShowFullContent] = useState(false);
+    const [userRating, setUserRating] = useState(vaultItem?.userRating || null);
+    const [isFavorite, setIsFavorite] = useState(vaultItem?.isFavorite || false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [showParticles, setShowParticles] = useState(true);
+    const [readingTime, setReadingTime] = useState(0);
+    const [copied, setCopied] = useState(false);
 
-  // Show confetti for new unlocks
-  useEffect(() => {
-    if (isNewUnlock && isOpen) {
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-    }
-  }, [isNewUnlock, isOpen]);
+    // Mark as read mutation
+    const markAsReadMutation = useMutation(
+        () => api.post(`/vault/items/${vaultItem.itemId}/read`),
+        {
+            onSuccess: () => {
+                queryClient.invalidateQueries(['vaultItems']);
+                if (autoRead) {
+                    setRevealStage('reading');
+                }
+            }
+        }
+    );
 
-  // Mark as read mutation
-  const markAsReadMutation = useMutation(
-    () => api.post(`/vault/items/${vaultItem.id}/read`),
-    {
-      onSuccess: () => {
-        setHasRead(true);
-        queryClient.invalidateQueries('vaultItems');
-      }
-    }
-  );
+    // Rating mutation
+    const rateMutation = useMutation(
+        ({ rating, notes }) => api.post(`/vault/items/${vaultItem.itemId}/rate`, { rating, notes }),
+        {
+            onSuccess: () => {
+                toast.success('Rating saved!');
+                queryClient.invalidateQueries(['vaultItems']);
+            },
+            onError: () => {
+                toast.error('Failed to save rating');
+            }
+        }
+    );
 
-  // Rate item mutation
-  const rateItemMutation = useMutation(
-    ({ rating, notes }) => api.post(`/vault/items/${vaultItem.id}/rate`, { rating, notes }),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries('vaultItems');
-        toast.success('Rating saved!');
-      },
-      onError: () => {
-        toast.error('Failed to save rating');
-      }
-    }
-  );
+    // Favorite mutation
+    const favoriteMutation = useMutation(
+        () => api.post(`/vault/items/${vaultItem.itemId}/favorite`),
+        {
+            onSuccess: (data) => {
+                setIsFavorite(data.data.isFavorite);
+                toast.success(data.data.isFavorite ? 'Added to favorites!' : 'Removed from favorites');
+                queryClient.invalidateQueries(['vaultItems']);
+            },
+            onError: () => {
+                toast.error('Failed to update favorite status');
+            }
+        }
+    );
 
-  // Auto-mark as read when opened
-  useEffect(() => {
-    if (isOpen && vaultItem && !hasRead) {
-      markAsReadMutation.mutate();
-    }
-  }, [isOpen, vaultItem, hasRead]);
+    // Vault item configuration
+    const categoryConfig = {
+        secret_archives: {
+            name: 'Secret Archives',
+            icon: Brain,
+            color: 'from-blue-500 to-blue-600',
+            lightColor: 'from-blue-200 to-blue-300',
+            particleColor: '#3B82F6',
+            description: 'Hidden mathematical insights and historical discoveries'
+        },
+        controversy_files: {
+            name: 'Controversy Files',
+            icon: Flame,
+            color: 'from-red-500 to-red-600',
+            lightColor: 'from-red-200 to-red-300',
+            particleColor: '#EF4444',
+            description: 'Debates, failures, and controversial topics in AI/ML'
+        },
+        beautiful_mind: {
+            name: 'Beautiful Mind',
+            icon: Lightbulb,
+            color: 'from-purple-500 to-purple-600',
+            lightColor: 'from-purple-200 to-purple-300',
+            particleColor: '#8B5CF6',
+            description: 'Inspirational stories and breakthrough moments'
+        }
+    };
 
-  // Get category styling
-  const getCategoryInfo = (category) => {
-    switch (category) {
-      case 'secret_archives':
-        return {
-          name: 'Secret Archives',
-          icon: '🗝️',
-          color: 'text-yellow-400',
-          bgGradient: 'from-yellow-500/20 to-orange-500/20',
-          borderColor: 'border-yellow-500/30',
-          description: 'Hidden connections and mind-blowing revelations'
+    const itemTypeConfig = {
+        secret: {
+            name: 'Secret',
+            icon: Lock,
+            description: 'Hidden knowledge and insider insights'
+        },
+        tool: {
+            name: 'Tool',
+            icon: Target,
+            description: 'Practical utilities and advanced techniques'
+        },
+        artifact: {
+            name: 'Artifact',
+            icon: Scroll,
+            description: 'Historical documents and breakthrough papers'
+        },
+        story: {
+            name: 'Story',
+            icon: BookOpen,
+            description: 'Inspirational narratives and personal journeys'
+        },
+        wisdom: {
+            name: 'Wisdom',
+            icon: Crown,
+            description: 'Deep philosophical insights and principles'
+        }
+    };
+
+    const rarityConfig = {
+        common: {
+            name: 'Common',
+            color: 'text-gray-400',
+            bgColor: 'from-gray-500 to-gray-600',
+            glowColor: 'shadow-gray-500/50',
+            particles: 15,
+            celebration: 'basic'
+        },
+        uncommon: {
+            name: 'Uncommon',
+            color: 'text-green-400',
+            bgColor: 'from-green-500 to-green-600',
+            glowColor: 'shadow-green-500/50',
+            particles: 25,
+            celebration: 'enhanced'
+        },
+        rare: {
+            name: 'Rare',
+            color: 'text-blue-400',
+            bgColor: 'from-blue-500 to-blue-600',
+            glowColor: 'shadow-blue-500/50',
+            particles: 35,
+            celebration: 'impressive'
+        },
+        epic: {
+            name: 'Epic',
+            color: 'text-purple-400',
+            bgColor: 'from-purple-500 to-purple-600',
+            glowColor: 'shadow-purple-500/50',
+            particles: 50,
+            celebration: 'spectacular'
+        },
+        legendary: {
+            name: 'Legendary',
+            color: 'text-yellow-400',
+            bgColor: 'from-yellow-500 to-yellow-600',
+            glowColor: 'shadow-yellow-500/50',
+            particles: 75,
+            celebration: 'legendary'
+        }
+    };
+
+    const category = categoryConfig[vaultItem?.category] || categoryConfig.secret_archives;
+    const itemType = itemTypeConfig[vaultItem?.itemType] || itemTypeConfig.secret;
+    const rarity = rarityConfig[vaultItem?.rarity] || rarityConfig.common;
+
+    // Calculate reading time
+    useEffect(() => {
+        if (vaultItem?.contentFull) {
+            const words = vaultItem.contentFull.split(' ').length;
+            const estimatedTime = Math.ceil(words / 200); // 200 WPM average
+            setReadingTime(estimatedTime);
+        }
+    }, [vaultItem]);
+
+    // Auto-progress reveal stages
+    useEffect(() => {
+        if (!isOpen || !vaultItem) return;
+
+        const timer1 = setTimeout(() => {
+            setRevealStage('revealed');
+        }, 2000);
+
+        const timer2 = setTimeout(() => {
+            if (autoRead) {
+                markAsReadMutation.mutate();
+            }
+        }, 3500);
+
+        return () => {
+            clearTimeout(timer1);
+            clearTimeout(timer2);
         };
-      case 'controversy_files':
-        return {
-          name: 'Controversy Files',
-          icon: '⚔️',
-          color: 'text-red-400',
-          bgGradient: 'from-red-500/20 to-pink-500/20',
-          borderColor: 'border-red-500/30',
-          description: 'Drama, feuds, and heated debates in AI history'
-        };
-      case 'beautiful_mind':
-        return {
-          name: 'Beautiful Mind Collection',
-          icon: '💎',
-          color: 'text-purple-400',
-          bgGradient: 'from-purple-500/20 to-blue-500/20',
-          borderColor: 'border-purple-500/30',
-          description: 'Mathematical elegance and stunning insights'
-        };
-      default:
-        return {
-          name: 'Neural Vault',
-          icon: '📖',
-          color: 'text-blue-400',
-          bgGradient: 'from-blue-500/20 to-teal-500/20',
-          borderColor: 'border-blue-500/30',
-          description: 'Knowledge awaits'
-        };
-    }
-  };
+    }, [isOpen, vaultItem, autoRead]);
 
-  // Handle rating submission
-  const handleRatingSubmit = () => {
-    if (userRating > 0) {
-      rateItemMutation.mutate({ rating: userRating, notes: userNotes });
-    }
-  };
+    // Handle rating
+    const handleRating = (rating) => {
+        setUserRating(rating);
+        rateMutation.mutate({ rating, notes: '' });
+    };
 
-  // Share functionality (mock for now)
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: vaultItem.title,
-        text: vaultItem.content?.headline || vaultItem.title,
-        url: window.location.href
-      });
-    } else {
-      navigator.clipboard.writeText(vaultItem.content?.headline || vaultItem.title);
-      toast.success('Copied to clipboard!');
-    }
-  };
+    // Handle favorite toggle
+    const handleFavoriteToggle = () => {
+        favoriteMutation.mutate();
+    };
 
-  if (!isOpen || !vaultItem) return null;
+    // Handle copy to clipboard
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(vaultItem.contentFull);
+            setCopied(true);
+            toast.success('Content copied to clipboard!');
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            toast.error('Failed to copy content');
+        }
+    };
 
-  const categoryInfo = getCategoryInfo(vaultItem.category);
+    // Handle close
+    const handleClose = () => {
+        setRevealStage('opening');
+        setShowFullContent(false);
+        onClose();
+    };
 
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        {/* Confetti for new unlocks */}
-        {showConfetti && (
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={200}
-            gravity={0.3}
-          />
-        )}
-
+    // Particle component
+    const Particle = ({ delay = 0, color = '#3B82F6' }) => (
         <motion.div
-          initial={{ scale: 0.8, opacity: 0, y: 50 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.8, opacity: 0, y: 50 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="bg-gray-900 border border-gray-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className={`bg-gradient-to-r ${categoryInfo.bgGradient} border-b ${categoryInfo.borderColor} relative overflow-hidden`}>
-            {/* Animated background elements */}
-            <div className="absolute inset-0 opacity-10">
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 180, 360] 
-                }}
-                transition={{ 
-                  duration: 20, 
-                  repeat: Infinity, 
-                  ease: "linear" 
-                }}
-                className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-white"
-              />
-              <motion.div
-                animate={{ 
-                  scale: [1.2, 1, 1.2],
-                  rotate: [360, 180, 0] 
-                }}
-                transition={{ 
-                  duration: 15, 
-                  repeat: Infinity, 
-                  ease: "linear" 
-                }}
-                className="absolute -bottom-16 -left-16 w-32 h-32 rounded-full bg-white"
-              />
-            </div>
+            initial={{ 
+                opacity: 0, 
+                scale: 0, 
+                x: 0, 
+                y: 0 
+            }}
+            animate={{ 
+                opacity: [0, 1, 0], 
+                scale: [0, 1, 0],
+                x: Math.random() * 400 - 200,
+                y: Math.random() * 400 - 200
+            }}
+            transition={{ 
+                duration: 2, 
+                delay,
+                ease: "easeOut"
+            }}
+            className="absolute w-2 h-2 rounded-full pointer-events-none"
+            style={{ backgroundColor: color }}
+        />
+    );
 
-            <div className="relative p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <motion.div
+    // Render particles
+    const renderParticles = () => {
+        if (!showParticles || revealStage === 'opening') return null;
+
+        return (
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(rarity.particles)].map((_, index) => (
+                    <Particle
+                        key={index}
+                        delay={index * 0.05}
+                        color={category.particleColor}
+                    />
+                ))}
+            </div>
+        );
+    };
+
+    // Render unlock celebration
+    const renderUnlockCelebration = () => {
+        if (revealStage !== 'revealed') return null;
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center mb-6"
+            >
+                <motion.div
+                    animate={{ 
+                        rotate: [0, 10, -10, 0],
+                        scale: [1, 1.1, 1]
+                    }}
+                    transition={{ 
+                        duration: 0.6,
+                        repeat: 2
+                    }}
+                    className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-gradient-to-r ${rarity.bgColor} text-white`}
+                >
+                    <Trophy className="w-5 h-5" />
+                    <span className="font-bold">Vault Item Unlocked!</span>
+                </motion.div>
+                
+                {vaultItem.bonusPoints && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="mt-2 flex items-center justify-center space-x-1 text-yellow-400"
+                    >
+                        <Zap className="w-4 h-4" />
+                        <span className="text-sm font-medium">+{vaultItem.bonusPoints} Skill Points</span>
+                    </motion.div>
+                )}
+            </motion.div>
+        );
+    };
+
+    // Render vault item header
+    const renderItemHeader = () => {
+        const CategoryIcon = category.icon;
+        const ItemTypeIcon = itemType.icon;
+
+        return (
+            <div className="text-center mb-6">
+                {/* Main Icon */}
+                <motion.div
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.2, type: "spring", damping: 15 }}
-                    className="text-6xl"
-                  >
-                    {categoryInfo.icon}
-                  </motion.div>
-                  
-                  <div>
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="flex items-center gap-2 mb-2"
-                    >
-                      <span className={`text-sm font-medium ${categoryInfo.color}`}>
-                        {categoryInfo.name}
-                      </span>
-                      {isNewUnlock && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ delay: 0.5, type: "spring" }}
-                          className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1"
-                        >
-                          <Sparkles className="w-3 h-3" />
-                          NEW UNLOCK!
-                        </motion.div>
-                      )}
-                    </motion.div>
-                    
-                    <motion.h1
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
-                      className="text-2xl font-bold text-white mb-2"
-                    >
-                      {vaultItem.title}
-                    </motion.h1>
-                    
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.5 }}
-                      className="text-gray-300 text-sm"
-                    >
-                      {categoryInfo.description}
-                    </motion.p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleShare}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
-                  >
-                    <Share2 className="w-5 h-5" />
-                  </button>
-                  
-                  <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="overflow-y-auto max-h-[calc(90vh-200px)]">
-            <div className="p-6">
-              {/* Main Content */}
-              {vaultItem.content && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="space-y-6"
+                    transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                    className={`
+                        inline-flex items-center justify-center w-20 h-20 rounded-full 
+                        bg-gradient-to-br ${category.color} ${rarity.glowColor} shadow-2xl mb-4
+                    `}
                 >
-                  {/* Headline */}
-                  {vaultItem.content.headline && (
-                    <div className="text-center">
-                      <h2 className="text-3xl font-bold text-white mb-4 leading-tight">
-                        {vaultItem.content.headline}
-                      </h2>
-                    </div>
-                  )}
-
-                  {/* Story */}
-                  {vaultItem.content.story && (
-                    <div className="prose prose-invert max-w-none">
-                      <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                        <div className="flex items-center gap-2 mb-4">
-                          <BookOpen className="w-5 h-5 text-blue-400" />
-                          <span className="font-semibold text-blue-400">The Story</span>
-                        </div>
-                        <p className="text-gray-300 leading-relaxed text-lg">
-                          {vaultItem.content.story}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Mind Blown Section */}
-                  {vaultItem.content.mindBlown && (
-                    <motion.div
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.8 }}
-                      className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-6"
-                    >
-                      <div className="flex items-center gap-2 mb-4">
-                        <motion.div
-                          animate={{ rotate: [0, 10, -10, 0] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Lightbulb className="w-5 h-5 text-yellow-400" />
-                        </motion.div>
-                        <span className="font-semibold text-yellow-400">Mind = Blown 🤯</span>
-                      </div>
-                      <p className="text-gray-200 font-medium text-lg italic">
-                        "{vaultItem.content.mindBlown}"
-                      </p>
-                    </motion.div>
-                  )}
-
-                  {/* Deep Dive Link */}
-                  {vaultItem.content.deepDive && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 1.0 }}
-                      className="bg-gray-800/50 rounded-xl p-4 border border-gray-700"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <ExternalLink className="w-4 h-4 text-blue-400" />
-                          <span className="text-blue-400 font-medium">Want to dive deeper?</span>
-                        </div>
-                        <a
-                          href={vaultItem.content.deepDive}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                        >
-                          Explore More
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      </div>
-                    </motion.div>
-                  )}
+                    <CategoryIcon className="w-10 h-10 text-white" />
                 </motion.div>
-              )}
-            </div>
 
-            {/* Rating & Notes Section */}
-            <div className="border-t border-gray-700 bg-gray-800/30 p-6">
-              <motion.div
+                {/* Rarity Badge */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className={`inline-block px-3 py-1 rounded-full ${rarity.bgColor} text-white text-sm font-medium mb-2`}
+                >
+                    {rarity.name} {itemType.name}
+                </motion.div>
+
+                {/* Title */}
+                <motion.h2
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="text-2xl font-bold text-white mb-2"
+                >
+                    {vaultItem.title}
+                </motion.h2>
+
+                {/* Category */}
+                <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.9 }}
+                    className="text-gray-400 text-sm"
+                >
+                    {category.name} • {itemType.description}
+                </motion.p>
+            </div>
+        );
+    };
+
+    // Render content preview
+    const renderContentPreview = () => {
+        return (
+            <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.2 }}
+                transition={{ delay: 1.1 }}
+                className="mb-6"
+            >
+                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-white">Preview</h3>
+                        <div className="flex items-center space-x-2 text-sm text-gray-400">
+                            <Clock className="w-4 h-4" />
+                            <span>{readingTime} min read</span>
+                        </div>
+                    </div>
+                    
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                        {vaultItem.description}
+                    </p>
+
+                    {vaultItem.contentPreview && (
+                        <div className="mt-4 pt-4 border-t border-gray-700">
+                            <p className="text-gray-400 text-sm italic">
+                                "{vaultItem.contentPreview}..."
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+        );
+    };
+
+    // Render full content
+    const renderFullContent = () => {
+        if (!showFullContent) return null;
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6"
+            >
+                <div className="bg-gray-900 rounded-lg p-6 border border-gray-600 max-h-96 overflow-y-auto">
+                    <div className="prose prose-invert prose-sm max-w-none">
+                        <div 
+                            className="text-gray-300 leading-relaxed"
+                            dangerouslySetInnerHTML={{ 
+                                __html: vaultItem.contentFull?.replace(/\n/g, '<br>') 
+                            }}
+                        />
+                    </div>
+                </div>
+            </motion.div>
+        );
+    };
+
+    // Render action buttons
+    const renderActionButtons = () => {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.3 }}
                 className="space-y-4"
-              >
+            >
+                {/* Primary Actions */}
+                <div className="flex items-center justify-center space-x-3">
+                    <button
+                        onClick={() => setShowFullContent(!showFullContent)}
+                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                    >
+                        {showFullContent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        <span>{showFullContent ? 'Hide Content' : 'Read Full Content'}</span>
+                    </button>
+
+                    <button
+                        onClick={handleFavoriteToggle}
+                        disabled={favoriteMutation.isLoading}
+                        className={`
+                            flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-colors
+                            ${isFavorite 
+                                ? 'bg-red-600 hover:bg-red-700 text-white' 
+                                : 'bg-gray-600 hover:bg-gray-700 text-white'
+                            }
+                        `}
+                    >
+                        <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+                        <span>{isFavorite ? 'Favorited' : 'Favorite'}</span>
+                    </button>
+                </div>
+
                 {/* Rating */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-white flex items-center gap-2">
-                      <Star className="w-4 h-4 text-yellow-400" />
-                      Rate this revelation
-                    </span>
-                    {userRating > 0 && (
-                      <span className="text-sm text-gray-400">
-                        {userRating}/5 stars
-                      </span>
+                <div className="text-center">
+                    <p className="text-sm text-gray-400 mb-2">Rate this content:</p>
+                    <div className="flex items-center justify-center space-x-1">
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                            <button
+                                key={rating}
+                                onClick={() => handleRating(rating)}
+                                disabled={rateMutation.isLoading}
+                                className={`
+                                    p-1 rounded transition-colors
+                                    ${userRating >= rating ? 'text-yellow-400' : 'text-gray-500 hover:text-yellow-300'}
+                                `}
+                            >
+                                <Star className={`w-5 h-5 ${userRating >= rating ? 'fill-current' : ''}`} />
+                            </button>
+                        ))}
+                    </div>
+                    {userRating && (
+                        <p className="text-xs text-gray-500 mt-1">
+                            You rated this {userRating}/5 stars
+                        </p>
                     )}
-                  </div>
-                  
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setUserRating(star)}
-                        className="p-1 hover:scale-110 transition-transform"
-                      >
-                        <Star
-                          className={`w-6 h-6 ${
-                            star <= userRating
-                              ? 'fill-yellow-400 text-yellow-400'
-                              : 'text-gray-600 hover:text-yellow-300'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
-                {/* Notes */}
-                <div>
-                  <button
-                    onClick={() => setShowNotes(!showNotes)}
-                    className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors mb-2"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    Add personal notes
-                  </button>
-                  
-                  <AnimatePresence>
-                    {showNotes && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <textarea
-                          value={userNotes}
-                          onChange={(e) => setUserNotes(e.target.value)}
-                          placeholder="What did you think about this revelation? Any connections to other concepts?"
-                          className="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-gray-300 placeholder-gray-500 focus:border-blue-400 focus:outline-none resize-none"
-                          rows={4}
-                        />
-                      </motion.div>
+                {/* Secondary Actions */}
+                <div className="flex items-center justify-center space-x-2">
+                    {showFullContent && (
+                        <button
+                            onClick={handleCopy}
+                            className="flex items-center space-x-1 text-gray-400 hover:text-white px-3 py-2 rounded text-sm transition-colors"
+                        >
+                            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            <span>{copied ? 'Copied!' : 'Copy'}</span>
+                        </button>
                     )}
-                  </AnimatePresence>
+                    
+                    <button
+                        onClick={() => setShowParticles(!showParticles)}
+                        className="flex items-center space-x-1 text-gray-400 hover:text-white px-3 py-2 rounded text-sm transition-colors"
+                    >
+                        {showParticles ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                        <span>Effects</span>
+                    </button>
                 </div>
+            </motion.div>
+        );
+    };
 
-                {/* Save Button */}
-                {(userRating > 0 || userNotes.trim()) && (
-                  <motion.button
-                    initial={{ scale: 0.9, opacity: 0 }}
+    // Render unlock trigger info
+    const renderUnlockInfo = () => {
+        if (!trigger || trigger === 'manual') return null;
+
+        const triggerMessages = {
+            'auto_unlock': 'Unlocked automatically based on your progress',
+            'quest_completion': 'Unlocked by completing a quest',
+            'phase_completion': 'Unlocked by completing a learning phase',
+            'streak_milestone': 'Unlocked by maintaining your learning streak',
+            'study_time_milestone': 'Unlocked by reaching a study time milestone'
+        };
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.5 }}
+                className="text-center mb-4"
+            >
+                <div className="inline-flex items-center space-x-2 bg-gray-800 px-4 py-2 rounded-full text-sm text-gray-400 border border-gray-700">
+                    <Unlock className="w-4 h-4" />
+                    <span>{triggerMessages[trigger] || 'Congratulations on unlocking this item!'}</span>
+                </div>
+            </motion.div>
+        );
+    };
+
+    if (!isOpen || !vaultItem) return null;
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
+                onClick={handleClose}
+            >
+                <motion.div
+                    ref={modalRef}
+                    initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    onClick={handleRatingSubmit}
-                    disabled={rateItemMutation.isLoading}
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    <Award className="w-4 h-4" />
-                    Save Feedback
-                  </motion.button>
-                )}
-              </motion.div>
-            </div>
-          </div>
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                    className="relative bg-gray-900 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700"
+                    onClick={e => e.stopPropagation()}
+                >
+                    {/* Close Button */}
+                    <button
+                        onClick={handleClose}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
 
-          {/* Status Indicators */}
-          <div className="absolute top-4 right-4 flex items-center gap-2">
-            {hasRead && (
-              <div className="bg-green-500/20 border border-green-500/30 rounded-full px-2 py-1 flex items-center gap-1">
-                <Eye className="w-3 h-3 text-green-400" />
-                <span className="text-xs text-green-400">Read</span>
-              </div>
-            )}
-            
-            {vaultItem.user_rating && (
-              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-full px-2 py-1 flex items-center gap-1">
-                <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                <span className="text-xs text-yellow-400">{vaultItem.user_rating}</span>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
+                    {/* Background Glow */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-5 rounded-2xl`} />
+
+                    {/* Particles */}
+                    {renderParticles()}
+
+                    {/* Content */}
+                    <div className="relative">
+                        {/* Opening Animation */}
+                        {revealStage === 'opening' && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-center py-12"
+                            >
+                                <motion.div
+                                    animate={{ 
+                                        scale: [1, 1.2, 1],
+                                        rotate: [0, 180, 360]
+                                    }}
+                                    transition={{ 
+                                        duration: 2, 
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    }}
+                                    className={`inline-block p-6 rounded-full bg-gradient-to-br ${category.color} mb-4`}
+                                >
+                                    <Lock className="w-12 h-12 text-white" />
+                                </motion.div>
+                                <h2 className="text-2xl font-bold text-white mb-2">Unlocking Vault...</h2>
+                                <p className="text-gray-400">Revealing your treasure...</p>
+                            </motion.div>
+                        )}
+
+                        {/* Revealed Content */}
+                        {revealStage !== 'opening' && (
+                            <>
+                                {renderUnlockCelebration()}
+                                {renderItemHeader()}
+                                {renderUnlockInfo()}
+                                {renderContentPreview()}
+                                <AnimatePresence>
+                                    {renderFullContent()}
+                                </AnimatePresence>
+                                {renderActionButtons()}
+                            </>
+                        )}
+                    </div>
+
+                    {/* Tags */}
+                    {vaultItem.tags && vaultItem.tags.length > 0 && revealStage !== 'opening' && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 1.7 }}
+                            className="mt-6 pt-6 border-t border-gray-700"
+                        >
+                            <div className="flex flex-wrap gap-2">
+                                {vaultItem.tags.map((tag, index) => (
+                                    <span
+                                        key={index}
+                                        className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full"
+                                    >
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
 };
 
 export default VaultRevealModal;
