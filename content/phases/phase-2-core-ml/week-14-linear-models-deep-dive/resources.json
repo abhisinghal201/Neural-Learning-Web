@@ -1,0 +1,627 @@
+{
+  "week_info": {
+    "title": "Linear Models Deep Dive",
+    "phase": 2,
+    "week": 14,
+    "duration": "7 days",
+    "difficulty": "Intermediate-Advanced",
+    "prerequisites": ["week_13_supervised_learning", "linear_algebra", "calculus", "probability_statistics"],
+    "learning_objectives": [
+      "Master regularized linear regression techniques (Ridge, Lasso, Elastic Net)",
+      "Understand the mathematical foundations of L1 and L2 regularization",
+      "Implement coordinate descent optimization for non-smooth penalties",
+      "Analyze regularization paths and model selection strategies",
+      "Apply comprehensive feature selection frameworks",
+      "Extend linear models to generalized linear models (GLMs)",
+      "Connect regularization to Bayesian and information-theoretic perspectives",
+      "Solve real-world problems using advanced linear modeling techniques"
+    ]
+  },
+  
+  "core_concepts": {
+    "regularization_theory": {
+      "definition": "Mathematical technique to prevent overfitting by adding penalty terms to the loss function",
+      "types": {
+        "l2_regularization": {
+          "name": "Ridge Regression",
+          "penalty": "α||β||₂² = α∑βᵢ²",
+          "effect": "Shrinks coefficients towards zero, handles multicollinearity",
+          "solution": "β = (X^T X + αI)^(-1) X^T y"
+        },
+        "l1_regularization": {
+          "name": "Lasso Regression", 
+          "penalty": "α||β||₁ = α∑|βᵢ|",
+          "effect": "Automatic feature selection through sparsity",
+          "optimization": "Coordinate descent with soft thresholding"
+        },
+        "elastic_net": {
+          "name": "Elastic Net",
+          "penalty": "α(ρ||β||₁ + (1-ρ)/2||β||₂²)",
+          "effect": "Combines benefits of Ridge and Lasso",
+          "parameters": "α (strength), ρ (L1 ratio)"
+        }
+      },
+      "geometric_interpretation": {
+        "ridge": "L2 ball constraint creates circular feasible region",
+        "lasso": "L1 ball constraint creates diamond-shaped feasible region with corners at axes",
+        "elastic_net": "Combination creates intermediate constraint shapes"
+      }
+    },
+    "coordinate_descent": {
+      "definition": "Optimization algorithm that cyclically optimizes one coordinate at a time",
+      "advantages": ["Handles non-smooth penalties", "Efficient for high-dimensional problems", "Natural sparsity"],
+      "soft_thresholding": "S(z, γ) = sign(z)(|z| - γ)₊ for Lasso updates"
+    },
+    "regularization_paths": {
+      "definition": "Solution trajectories as regularization parameter varies",
+      "applications": ["Model selection", "Understanding feature importance", "Stability analysis"],
+      "cross_validation": "Use CV to select optimal regularization strength"
+    }
+  },
+  
+  "primary_resources": {
+    "foundational_textbooks": [
+      {
+        "title": "The Elements of Statistical Learning",
+        "authors": "Hastie, Tibshirani, Friedman",
+        "chapters": ["Chapter 3: Linear Methods for Regression", "Chapter 4: Linear Methods for Classification"],
+        "focus": "Comprehensive mathematical treatment of regularized linear models",
+        "difficulty": "Advanced",
+        "key_topics": ["Ridge and Lasso derivations", "Degrees of freedom", "Model selection"],
+        "url": "https://web.stanford.edu/~hastie/ElemStatLearn/",
+        "access": "Free PDF available"
+      },
+      {
+        "title": "An Introduction to Statistical Learning",
+        "authors": "James, Witten, Hastie, Tibshirani", 
+        "chapters": ["Chapter 6: Linear Model Selection and Regularization"],
+        "focus": "Accessible introduction with R implementations",
+        "difficulty": "Intermediate",
+        "key_topics": ["Ridge and Lasso intuition", "Cross-validation", "Feature selection"],
+        "url": "https://www.statlearning.com/",
+        "access": "Free PDF available"
+      },
+      {
+        "title": "Hands-On Machine Learning",
+        "authors": "Aurélien Géron",
+        "chapters": ["Chapter 4: Training Linear Models"],
+        "focus": "Practical implementation with scikit-learn",
+        "difficulty": "Intermediate",
+        "key_topics": ["Regularized regression implementation", "Hyperparameter tuning", "Real-world examples"],
+        "url": "https://www.oreilly.com/library/view/hands-on-machine-learning/9781492032632/",
+        "access": "O'Reilly subscription or purchase"
+      },
+      {
+        "title": "Pattern Recognition and Machine Learning",
+        "authors": "Christopher Bishop",
+        "chapters": ["Chapter 3: Linear Models for Regression", "Chapter 4: Linear Models for Classification"],
+        "focus": "Bayesian perspective on linear models",
+        "difficulty": "Advanced",
+        "key_topics": ["Bayesian linear regression", "Evidence approximation", "Automatic relevance determination"],
+        "url": "https://www.microsoft.com/en-us/research/uploads/prod/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
+        "access": "Free PDF available"
+      }
+    ],
+    "research_papers": [
+      {
+        "title": "Regression Shrinkage and Selection via the Lasso",
+        "authors": "Robert Tibshirani",
+        "year": 1996,
+        "journal": "Journal of the Royal Statistical Society",
+        "significance": "Original Lasso paper introducing L1 regularization",
+        "key_contributions": ["L1 penalty formulation", "Feature selection properties", "Theoretical analysis"],
+        "url": "https://statweb.stanford.edu/~tibs/lasso/lasso.pdf",
+        "difficulty": "Advanced"
+      },
+      {
+        "title": "Regularization and Variable Selection via the Elastic Net",
+        "authors": "Zou, Hastie",
+        "year": 2005,
+        "journal": "Journal of the Royal Statistical Society",
+        "significance": "Introduced Elastic Net combining Ridge and Lasso",
+        "key_contributions": ["Elastic Net formulation", "Grouped variable selection", "Practical advantages"],
+        "url": "https://web.stanford.edu/~hastie/Papers/B67.2%20(2005)%20301-320%20Zou%20&%20Hastie.pdf",
+        "difficulty": "Advanced"
+      },
+      {
+        "title": "Coordinate Descent Algorithms for Lasso Penalized Regression",
+        "authors": "Wu, Lange",
+        "year": 2008,
+        "journal": "Annals of Applied Statistics",
+        "significance": "Efficient coordinate descent implementation",
+        "key_contributions": ["Coordinate descent algorithm", "Convergence analysis", "Computational efficiency"],
+        "url": "https://projecteuclid.org/journals/annals-of-applied-statistics/volume-2/issue-1/Coordinate-descent-algorithms-for-lasso-penalized-regression/10.1214/07-AOAS147.full",
+        "difficulty": "Advanced"
+      },
+      {
+        "title": "A Statistical View of Some Chemometrics Regression Tools",
+        "authors": "Frank, Friedman",
+        "year": 1993,
+        "journal": "Technometrics",
+        "significance": "Unified view of regularization methods",
+        "key_contributions": ["Ridge regression analysis", "Bias-variance decomposition", "Comparative study"],
+        "url": "https://web.stanford.edu/~hastie/Papers/ridge.pdf",
+        "difficulty": "Intermediate"
+      }
+    ],
+    "video_lectures": [
+      {
+        "course": "Stanford CS229 - Machine Learning",
+        "instructor": "Andrew Ng",
+        "lectures": ["Lecture 3: Locally Weighted and Logistic Regression", "Lecture 4: Perceptron and Generalized Linear Models"],
+        "focus": "Mathematical foundations and intuitive explanations",
+        "duration": "2-3 hours total",
+        "url": "https://see.stanford.edu/Course/CS229",
+        "access": "Free online",
+        "key_topics": ["Linear regression derivation", "Logistic regression", "GLM framework"]
+      },
+      {
+        "course": "MIT 15.097 Prediction: Machine Learning and Statistics",
+        "instructor": "Philippe Rigollet",
+        "lectures": ["Regularization and Model Selection", "High-Dimensional Regression"],
+        "focus": "Theoretical foundations and statistical perspective",
+        "duration": "3-4 hours total",
+        "url": "https://ocw.mit.edu/courses/sloan-school-of-management/15-097-prediction-machine-learning-and-statistics-spring-2012/",
+        "access": "Free MIT OpenCourseWare",
+        "key_topics": ["Regularization theory", "High-dimensional statistics", "Model selection"]
+      },
+      {
+        "course": "Caltech Learning From Data",
+        "instructor": "Yaser Abu-Mostafa",
+        "lectures": ["Regularization", "Validation"],
+        "focus": "Learning theory perspective",
+        "duration": "2 hours total",
+        "url": "https://work.caltech.edu/telecourse.html",
+        "access": "Free online",
+        "key_topics": ["Learning theory", "Regularization justification", "Validation techniques"]
+      }
+    ]
+  },
+  
+  "hands_on_resources": {
+    "programming_tutorials": [
+      {
+        "platform": "Scikit-learn Documentation",
+        "focus": "Linear models and regularization",
+        "tutorials": ["Linear Models User Guide", "Feature Selection", "Cross-validation"],
+        "implementation": "Python with comprehensive examples",
+        "url": "https://scikit-learn.org/stable/modules/linear_model.html",
+        "time_investment": "4-6 hours",
+        "key_apis": ["LinearRegression", "Ridge", "Lasso", "ElasticNet", "RidgeCV", "LassoCV"]
+      },
+      {
+        "platform": "Towards Data Science",
+        "focus": "Regularization implementation and intuition",
+        "articles": ["Ridge vs Lasso Regression", "Coordinate Descent for Lasso", "Regularization Path Analysis"],
+        "implementation": "Python with mathematical explanations",
+        "url": "https://towardsdatascience.com/ridge-and-lasso-regression-a-complete-guide-with-python-scikit-learn-e20e34bcbf0b",
+        "time_investment": "2-3 hours"
+      },
+      {
+        "platform": "Kaggle Learn",
+        "focus": "Feature engineering and model selection",
+        "courses": ["Feature Engineering", "Intermediate Machine Learning"],
+        "implementation": "Interactive notebooks",
+        "url": "https://www.kaggle.com/learn",
+        "time_investment": "3-4 hours"
+      }
+    ],
+    "interactive_tools": [
+      {
+        "tool": "Regularization Path Visualizer",
+        "focus": "Interactive exploration of regularization effects",
+        "url": "https://explained.ai/regularization/index.html",
+        "usage": "Visualize how coefficients change with regularization strength"
+      },
+      {
+        "tool": "Scikit-learn Plot Gallery",
+        "focus": "Regularization visualization examples",
+        "url": "https://scikit-learn.org/stable/auto_examples/index.html#linear-models",
+        "usage": "Ready-to-run examples of regularization techniques"
+      },
+      {
+        "tool": "Ridge and Lasso Interactive Demo",
+        "focus": "Compare Ridge and Lasso on synthetic data",
+        "url": "https://setosa.io/ev/ordinary-least-squares-regression/",
+        "usage": "Understand geometric interpretation of regularization"
+      }
+    ],
+    "datasets_for_practice": [
+      {
+        "name": "Diabetes Dataset",
+        "purpose": "Low-dimensional regression with interpretable features",
+        "size": "442 samples, 10 features",
+        "complexity": "Simple, well-conditioned",
+        "url": "https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_diabetes.html",
+        "usage": "Perfect for understanding regularization effects",
+        "features": "Age, sex, BMI, blood pressure, and 6 serum measurements"
+      },
+      {
+        "name": "Boston Housing Dataset",
+        "purpose": "Classic regression benchmark with multicollinearity",
+        "size": "506 samples, 13 features",
+        "complexity": "Moderate multicollinearity",
+        "url": "https://archive.ics.uci.edu/ml/machine-learning-databases/housing/",
+        "usage": "Demonstrate Ridge regression benefits",
+        "note": "Consider ethical implications and bias in this dataset"
+      },
+      {
+        "name": "Wine Quality Dataset",
+        "purpose": "Real-world regression with noise",
+        "size": "1599 samples, 11 features",
+        "complexity": "Noisy data with relevant features",
+        "url": "https://archive.ics.uci.edu/ml/datasets/wine+quality",
+        "usage": "Practice feature selection with Lasso"
+      },
+      {
+        "name": "Breast Cancer Wisconsin",
+        "purpose": "High-dimensional classification",
+        "size": "569 samples, 30 features",
+        "complexity": "High-dimensional with correlated features",
+        "url": "https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html",
+        "usage": "Demonstrate Elastic Net for classification"
+      },
+      {
+        "name": "20 Newsgroups (subset)",
+        "purpose": "High-dimensional text classification",
+        "size": "Variable, 1000+ features",
+        "complexity": "Very high-dimensional, sparse",
+        "url": "https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_20newsgroups.html",
+        "usage": "Extreme case for Lasso feature selection"
+      }
+    ]
+  },
+  
+  "mathematical_foundations": {
+    "optimization_theory": [
+      {
+        "concept": "Convex Optimization",
+        "importance": "Ridge and Lasso are convex optimization problems",
+        "key_results": ["Global optimum guaranteed", "Efficient algorithms available"],
+        "resources": ["Boyd & Vandenberghe 'Convex Optimization'", "Online course by Stephen Boyd"]
+      },
+      {
+        "concept": "Lagrange Multipliers",
+        "importance": "Constrained optimization formulation of regularization",
+        "connection": "Penalty parameter α corresponds to Lagrange multiplier",
+        "geometric_meaning": "Trade-off between fit and constraint satisfaction"
+      },
+      {
+        "concept": "Subgradient Methods",
+        "importance": "L1 penalty is non-differentiable at zero",
+        "application": "Coordinate descent uses subgradients for Lasso",
+        "soft_thresholding": "Closed-form solution for Lasso coordinate updates"
+      }
+    ],
+    "statistical_theory": [
+      {
+        "concept": "Bias-Variance Decomposition",
+        "formula": "E[(y - ŷ)²] = Bias²[ŷ] + Var[ŷ] + σ²",
+        "regularization_effect": {
+          "ridge": "Reduces variance, increases bias",
+          "lasso": "Reduces variance through selection, can increase bias"
+        }
+      },
+      {
+        "concept": "Degrees of Freedom",
+        "ridge_formula": "df(α) = tr[X(X^T X + αI)^(-1)X^T]",
+        "interpretation": "Effective number of parameters in regularized model",
+        "model_complexity": "Decreases monotonically with regularization strength"
+      },
+      {
+        "concept": "Information Criteria",
+        "aic": "AIC = n·log(MSE) + 2·df",
+        "bic": "BIC = n·log(MSE) + log(n)·df",
+        "usage": "Model selection when cross-validation is not feasible"
+      }
+    ],
+    "bayesian_perspective": [
+      {
+        "ridge_prior": "Gaussian prior: p(β) ~ N(0, σ²/α·I)",
+        "lasso_prior": "Laplace prior: p(β) ~ Laplace(0, 1/α)",
+        "interpretation": "Regularization = Maximum a posteriori (MAP) estimation",
+        "advantages": "Uncertainty quantification, automatic model selection"
+      }
+    ]
+  },
+  
+  "practical_implementation": {
+    "libraries_and_tools": [
+      {
+        "library": "scikit-learn",
+        "models": ["Ridge", "Lasso", "ElasticNet", "RidgeCV", "LassoCV", "ElasticNetCV"],
+        "utilities": ["StandardScaler", "PolynomialFeatures", "Pipeline"],
+        "model_selection": ["GridSearchCV", "RandomizedSearchCV", "cross_val_score"],
+        "documentation": "https://scikit-learn.org/stable/modules/linear_model.html"
+      },
+      {
+        "library": "statsmodels",
+        "focus": "Statistical perspective and inference",
+        "capabilities": ["Statistical summaries", "Confidence intervals", "Hypothesis testing"],
+        "documentation": "https://www.statsmodels.org/stable/regression.html"
+      },
+      {
+        "library": "glmnet-python",
+        "focus": "Efficient regularization path computation",
+        "advantages": ["Fast coordinate descent", "Exact regularization paths", "Cross-validation"],
+        "documentation": "https://github.com/civisanalytics/python-glmnet"
+      }
+    ],
+    "implementation_exercises": [
+      {
+        "exercise": "Ridge Regression from Scratch",
+        "objective": "Implement Ridge using normal equation and understand shrinkage",
+        "skills": ["Matrix operations", "Regularization effects", "Numerical stability"],
+        "estimated_time": "2-3 hours",
+        "difficulty": "Intermediate",
+        "deliverables": ["Working Ridge implementation", "Shrinkage visualization", "Condition number analysis"]
+      },
+      {
+        "exercise": "Coordinate Descent for Lasso",
+        "objective": "Implement Lasso using coordinate descent algorithm",
+        "skills": ["Optimization algorithms", "Soft thresholding", "Convergence criteria"],
+        "estimated_time": "4-5 hours", 
+        "difficulty": "Advanced",
+        "deliverables": ["Coordinate descent implementation", "Convergence analysis", "Regularization path"]
+      },
+      {
+        "exercise": "Regularization Path Analysis",
+        "objective": "Compute and visualize regularization paths for all methods",
+        "skills": ["Algorithm implementation", "Visualization", "Model comparison"],
+        "estimated_time": "3-4 hours",
+        "difficulty": "Intermediate-Advanced",
+        "deliverables": ["Path computation algorithm", "Comparative visualizations", "Optimal parameter selection"]
+      },
+      {
+        "exercise": "Feature Selection Comparison",
+        "objective": "Compare multiple feature selection approaches",
+        "skills": ["Feature engineering", "Selection algorithms", "Evaluation metrics"],
+        "estimated_time": "3-4 hours",
+        "difficulty": "Intermediate",
+        "deliverables": ["Selection framework", "Comparison analysis", "Best practice recommendations"]
+      }
+    ]
+  },
+  
+  "advanced_topics": {
+    "optimization_algorithms": [
+      {
+        "algorithm": "Coordinate Descent",
+        "applications": ["Lasso", "Elastic Net", "Group Lasso"],
+        "advantages": ["Handles non-smooth penalties", "Naturally sparse", "Efficient for high dimensions"],
+        "implementation_details": ["Soft thresholding operator", "Active set strategies", "Warm starts"]
+      },
+      {
+        "algorithm": "Proximal Gradient Methods",
+        "applications": ["General regularized optimization", "Composite objectives"],
+        "theory": "Alternates between gradient step and proximal operator",
+        "connection": "Coordinate descent is special case for separable penalties"
+      },
+      {
+        "algorithm": "ADMM (Alternating Direction Method of Multipliers)",
+        "applications": ["Distributed optimization", "Constrained problems"],
+        "advantages": ["Parallelizable", "Handles complex constraints"],
+        "use_cases": ["Large-scale problems", "Federated learning"]
+      }
+    ],
+    "extensions": [
+      {
+        "extension": "Group Lasso",
+        "penalty": "α∑||β_g||₂ (L2 norm of groups)",
+        "effect": "Selects entire groups of features together",
+        "applications": ["Categorical variables", "Gene pathways", "Time series features"]
+      },
+      {
+        "extension": "Fused Lasso",
+        "penalty": "α∑|β_i - β_{i+1}| (differences between adjacent coefficients)",
+        "effect": "Encourages smoothness in coefficient sequence",
+        "applications": ["Time series", "Spatial data", "Ordered features"]
+      },
+      {
+        "extension": "Adaptive Lasso",
+        "penalty": "α∑w_i|β_i| (weighted L1 penalty)",
+        "advantages": ["Oracle properties", "Better feature selection"],
+        "weight_selection": "Often use 1/|β̂_ols|^γ where γ > 0"
+      }
+    ]
+  },
+  
+  "assessment_and_validation": {
+    "theoretical_understanding": [
+      "Explain the geometric interpretation of Ridge and Lasso regularization",
+      "Derive the Ridge regression solution using Lagrange multipliers",
+      "Prove that Lasso can set coefficients exactly to zero while Ridge cannot",
+      "Analyze the bias-variance tradeoff in regularized regression",
+      "Connect regularization to Bayesian priors on model parameters",
+      "Explain why coordinate descent works for Lasso but not Ridge",
+      "Derive the soft thresholding operator for Lasso coordinate updates",
+      "Analyze the degrees of freedom for Ridge regression"
+    ],
+    "practical_challenges": [
+      {
+        "challenge": "High-Dimensional Regression",
+        "description": "Build regularized models when p >> n (more features than samples)",
+        "evaluation_criteria": ["Model performance", "Feature selection quality", "Computational efficiency"],
+        "time_limit": "4 hours",
+        "datasets": "Simulated genomics or text data"
+      },
+      {
+        "challenge": "Multicollinearity Handling",
+        "description": "Compare Ridge, Lasso, and Elastic Net on highly correlated features",
+        "evaluation_criteria": ["Stability analysis", "Interpretation quality", "Prediction performance"],
+        "time_limit": "3 hours",
+        "datasets": "Financial or marketing data with correlated predictors"
+      },
+      {
+        "challenge": "Real-Time Feature Selection",
+        "description": "Implement online/streaming version of regularized regression",
+        "evaluation_criteria": ["Algorithm efficiency", "Adaptation to concept drift", "Memory usage"],
+        "time_limit": "5 hours",
+        "complexity": "Advanced"
+      }
+    ]
+  },
+  
+  "week_schedule": {
+    "day_1": {
+      "focus": "Ridge Regression Foundations",
+      "morning": ["Read ESL Chapter 3.4", "Ridge regression mathematical derivation"],
+      "afternoon": ["Implement Ridge from scratch", "Geometric interpretation visualization"],
+      "evening": ["Compare with OLS", "Condition number analysis"],
+      "deliverable": "Ridge regression implementation with analysis"
+    },
+    "day_2": {
+      "focus": "Lasso Regression and Feature Selection",
+      "morning": ["Read Tibshirani 1996 paper", "L1 penalty theory"],
+      "afternoon": ["Coordinate descent algorithm", "Soft thresholding implementation"],
+      "evening": ["Feature selection analysis", "Sparsity patterns"],
+      "deliverable": "Lasso implementation with feature selection study"
+    },
+    "day_3": {
+      "focus": "Elastic Net and Optimization",
+      "morning": ["Elastic Net theory", "L1-L2 combination benefits"],
+      "afternoon": ["Implement Elastic Net", "Parameter tuning strategies"],
+      "evening": ["Optimization algorithm comparison", "Convergence analysis"],
+      "deliverable": "Complete Elastic Net implementation"
+    },
+    "day_4": {
+      "focus": "Regularization Paths and Model Selection",
+      "morning": ["Regularization path theory", "Solution path algorithms"],
+      "afternoon": ["Implement path computation", "Cross-validation integration"],
+      "evening": ["Model selection strategies", "Information criteria"],
+      "deliverable": "Regularization path analyzer"
+    },
+    "day_5": {
+      "focus": "Feature Selection Framework",
+      "morning": ["Multiple selection approaches", "Univariate vs multivariate"],
+      "afternoon": ["Implement selection comparison", "Stability analysis"],
+      "evening": ["Best practices", "Domain-specific considerations"],
+      "deliverable": "Comprehensive feature selection framework"
+    },
+    "day_6": {
+      "focus": "Generalized Linear Models",
+      "morning": ["GLM theory", "Link functions and exponential families"],
+      "afternoon": ["Logistic regression regularization", "Implementation"],
+      "evening": ["Compare regularization in classification vs regression"],
+      "deliverable": "Regularized GLM implementation"
+    },
+    "day_7": {
+      "focus": "Integration and Real-World Application",
+      "morning": ["Review all concepts", "Integration project"],
+      "afternoon": ["Real-world dataset analysis", "Complete pipeline"],
+      "evening": ["Advanced topics exploration", "Week 15 preparation"],
+      "deliverable": "Complete linear models analysis project"
+    }
+  },
+  
+  "connections_to_future_topics": {
+    "week_15_preview": {
+      "topic": "Decision Trees and Ensemble Methods",
+      "connections": ["Feature selection carries over", "Bias-variance tradeoff fundamental", "Cross-validation techniques"],
+      "contrast": "Non-linear models vs linear, different regularization approaches"
+    },
+    "deep_learning_connections": {
+      "regularization": "L1/L2 penalties apply to neural networks",
+      "optimization": "Coordinate descent principles extend to SGD variants",
+      "feature_learning": "Automatic feature extraction vs manual selection"
+    },
+    "advanced_ml": {
+      "kernel_methods": "Regularization in RKHS",
+      "ensemble_methods": "Regularization through model averaging",
+      "online_learning": "Regularized online algorithms"
+    }
+  },
+  
+  "troubleshooting_guide": {
+    "common_issues": [
+      {
+        "issue": "Ridge regression coefficients not shrinking as expected",
+        "causes": ["Features not standardized", "Regularization parameter too small", "Numerical precision issues"],
+        "solutions": ["Apply StandardScaler", "Increase alpha parameter", "Check condition number"]
+      },
+      {
+        "issue": "Lasso not producing sparse solutions",
+        "causes": ["Alpha too small", "Poor initialization", "Convergence issues"],
+        "solutions": ["Increase regularization strength", "Multiple random initializations", "Adjust convergence tolerance"]
+      },
+      {
+        "issue": "Coordinate descent not converging",
+        "causes": ["Learning rate too large", "Numerical instability", "Poor convergence criteria"],
+        "solutions": ["Reduce step size", "Add numerical stabilization", "Tighten convergence tolerance"]
+      },
+      {
+        "issue": "Cross-validation giving inconsistent results",
+        "causes": ["Small dataset", "High variance estimator", "Inadequate CV folds"],
+        "solutions": ["Use nested CV", "Repeated CV", "Increase number of folds"]
+      }
+    ],
+    "debugging_strategies": [
+      "Always start with simple synthetic data where true solution is known",
+      "Visualize regularization paths to understand model behavior",
+      "Compare with scikit-learn implementations for validation",
+      "Check gradient computations numerically",
+      "Monitor convergence criteria and objective function values"
+    ]
+  },
+  
+  "additional_resources": {
+    "books_for_deeper_study": [
+      {
+        "title": "Convex Optimization",
+        "authors": "Boyd, Vandenberghe",
+        "focus": "Mathematical foundations of optimization",
+        "url": "https://web.stanford.edu/~boyd/cvxbook/",
+        "access": "Free PDF"
+      },
+      {
+        "title": "High-Dimensional Statistics",
+        "authors": "Wainwright",
+        "focus": "Modern perspective on high-dimensional problems",
+        "relevance": "Theoretical foundations for sparse methods"
+      },
+      {
+        "title": "Statistical Learning with Sparsity",
+        "authors": "Hastie, Tibshirani, Wainwright",
+        "focus": "Comprehensive treatment of sparse methods",
+        "url": "https://web.stanford.edu/~hastie/StatLearnSparsity/",
+        "access": "Free PDF"
+      }
+    ],
+    "online_communities": [
+      {
+        "platform": "Cross Validated",
+        "focus": "Statistical aspects of regularization",
+        "url": "https://stats.stackexchange.com/",
+        "search_tags": ["regularization", "ridge-regression", "lasso", "feature-selection"]
+      },
+      {
+        "platform": "Reddit r/MachineLearning",
+        "focus": "Research discussions and paper reviews",
+        "url": "https://www.reddit.com/r/MachineLearning/"
+      },
+      {
+        "platform": "Stack Overflow",
+        "focus": "Implementation questions",
+        "tags": ["scikit-learn", "regression", "optimization"],
+        "url": "https://stackoverflow.com/"
+      }
+    ],
+    "conferences_and_journals": [
+      {
+        "venue": "ICML (International Conference on Machine Learning)",
+        "relevance": "Latest research in optimization and learning theory",
+        "url": "https://icml.cc/"
+      },
+      {
+        "venue": "Journal of Machine Learning Research",
+        "relevance": "High-quality theoretical and empirical research",
+        "url": "https://jmlr.org/"
+      },
+      {
+        "venue": "Annals of Statistics", 
+        "relevance": "Statistical foundations and theory",
+        "url": "https://imstat.org/journals-and-publications/annals-of-statistics/"
+      }
+    ]
+  }
+}
