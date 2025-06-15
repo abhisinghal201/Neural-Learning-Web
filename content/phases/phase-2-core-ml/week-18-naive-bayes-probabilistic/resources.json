@@ -1,0 +1,1067 @@
+{
+  "week_info": {
+    "title": "Naive Bayes and Probabilistic Methods",
+    "phase": 2,
+    "week": 18,
+    "duration": "7 days",
+    "difficulty": "Intermediate",
+    "prerequisites": ["week_3_probability_stats", "week_17_support_vector_machines", "bayes_theorem", "conditional_probability"],
+    "learning_objectives": [
+      "Master Bayes' theorem and its applications to machine learning",
+      "Understand the naive independence assumption and its implications",
+      "Implement multiple Naive Bayes variants from scratch",
+      "Apply probabilistic reasoning to classification problems",
+      "Develop expertise in text classification and NLP applications",
+      "Analyze uncertainty quantification and confidence estimation",
+      "Connect probabilistic methods to modern machine learning",
+      "Build real-world applications with proper evaluation"
+    ]
+  },
+  
+  "core_concepts": {
+    "bayes_theorem": {
+      "definition": "Fundamental theorem for updating beliefs based on evidence: P(H|E) = P(E|H) × P(H) / P(E)",
+      "components": {
+        "posterior": "P(H|E) - Updated belief after observing evidence",
+        "likelihood": "P(E|H) - Probability of evidence given hypothesis",
+        "prior": "P(H) - Initial belief before observing evidence",
+        "evidence": "P(E) - Marginal probability of evidence (normalizing constant)"
+      },
+      "key_insights": [
+        "Provides framework for rational belief updating",
+        "Forms mathematical foundation for all Bayesian inference",
+        "Enables principled handling of uncertainty in ML",
+        "Connects prior knowledge with observed data"
+      ]
+    },
+    "naive_independence_assumption": {
+      "statement": "Features are conditionally independent given the class label",
+      "mathematical_form": "P(x₁, x₂, ..., xₙ | y) = ∏ᵢ P(xᵢ | y)",
+      "why_naive": "Real-world features are often correlated, violating independence",
+      "why_it_works": [
+        "Decision boundaries can remain effective despite violated assumptions",
+        "Relative class rankings often preserved even with biased probabilities",
+        "Simplicity provides good bias-variance tradeoff",
+        "Many datasets have approximately independent features"
+      ],
+      "when_problematic": [
+        "Highly correlated features with strong dependencies",
+        "Sequential data where order matters",
+        "Features that are deterministically related"
+      ]
+    },
+    "probability_estimation": {
+      "maximum_likelihood": "Standard approach: estimate parameters from training data frequencies",
+      "smoothing_techniques": {
+        "laplace_smoothing": "Add pseudocounts (α=1) to handle zero probabilities",
+        "additive_smoothing": "General form with parameter α for pseudocounts",
+        "good_turing": "Advanced smoothing based on frequency of frequencies"
+      },
+      "numerical_stability": {
+        "log_probabilities": "Use log space to avoid numerical underflow",
+        "log_sum_exp_trick": "Stable computation of normalized probabilities",
+        "precision_considerations": "Handle very small and very large numbers"
+      }
+    }
+  },
+  
+  "naive_bayes_variants": {
+    "gaussian_naive_bayes": {
+      "assumption": "Features follow Gaussian (normal) distributions within each class",
+      "parameters": "Mean μ and variance σ² for each feature-class pair",
+      "likelihood": "P(xᵢ|y) = (1/√(2πσ²)) × exp(-(xᵢ-μ)²/(2σ²))",
+      "use_cases": [
+        "Continuous numerical features",
+        "Real-valued measurements",
+        "When features approximately follow normal distribution",
+        "General classification tasks with numeric data"
+      ],
+      "advantages": [
+        "Natural handling of continuous features",
+        "No need for discretization",
+        "Probabilistic confidence estimates",
+        "Fast training and prediction"
+      ],
+      "limitations": [
+        "Assumes Gaussian distributions",
+        "Can be affected by outliers",
+        "May not capture multi-modal distributions",
+        "Requires sufficient data for parameter estimation"
+      ]
+    },
+    "multinomial_naive_bayes": {
+      "assumption": "Features follow multinomial distributions (discrete counts)",
+      "parameters": "Probability θᵢⱼ for each feature-class combination",
+      "likelihood": "P(x|y) = (n!)/(∏xᵢ!) × ∏θᵢⱼˣⁱ where n = Σxᵢ",
+      "use_cases": [
+        "Text classification with word counts",
+        "Document categorization",
+        "Spam filtering",
+        "Discrete feature data",
+        "Count-based features"
+      ],
+      "preprocessing": [
+        "Tokenization and vocabulary building",
+        "Count vectorization or TF-IDF",
+        "N-gram extraction",
+        "Stop word removal",
+        "Feature selection"
+      ],
+      "advantages": [
+        "Excellent for text data",
+        "Handles variable-length documents",
+        "Scales well with vocabulary size",
+        "Interpretable feature importance"
+      ],
+      "applications": {
+        "spam_detection": "Email classification based on word frequencies",
+        "sentiment_analysis": "Positive/negative sentiment from text",
+        "topic_classification": "Categorizing documents by subject",
+        "language_detection": "Identifying language from character n-grams"
+      }
+    },
+    "bernoulli_naive_bayes": {
+      "assumption": "Features are binary (0/1) following Bernoulli distributions",
+      "parameters": "Probability pᵢⱼ that feature i is present in class j",
+      "likelihood": "P(xᵢ|y) = pᵢⱼˣⁱ × (1-pᵢⱼ)¹⁻ˣⁱ",
+      "use_cases": [
+        "Binary feature vectors",
+        "Presence/absence of attributes",
+        "Boolean features",
+        "Binarized text data",
+        "Medical diagnosis with symptoms"
+      ],
+      "advantages": [
+        "Simple and interpretable",
+        "Works well with sparse binary data",
+        "Fast computation",
+        "Natural for presence/absence features"
+      ],
+      "text_applications": [
+        "Document classification with word presence",
+        "Binary bag-of-words models",
+        "Feature selection based on presence",
+        "Short text classification"
+      ]
+    },
+    "complement_naive_bayes": {
+      "motivation": "Addresses bias in multinomial NB for imbalanced datasets",
+      "key_idea": "Estimate parameters using complement of each class",
+      "advantages": [
+        "Better performance on imbalanced text data",
+        "Reduces bias toward frequent classes",
+        "More stable estimates for rare classes"
+      ],
+      "use_cases": [
+        "Imbalanced text classification",
+        "Multi-class problems with skewed distributions",
+        "Large vocabulary text datasets"
+      ]
+    }
+  },
+  
+  "mathematical_foundations": {
+    "classification_derivation": {
+      "decision_rule": "ŷ = argmax P(y|x) = argmax P(x|y) × P(y)",
+      "log_probability_form": "ŷ = argmax [log P(y) + Σᵢ log P(xᵢ|y)]",
+      "feature_contributions": "Each feature contributes additively in log space",
+      "decision_boundary": "Linear in log-odds space for exponential family distributions"
+    },
+    "parameter_estimation": {
+      "class_priors": "P(y) = (count(y) + α) / (N + α × |classes|)",
+      "gaussian_parameters": {
+        "mean": "μᵧ = (1/Nᵧ) × Σᵢ xᵢ where yᵢ = y",
+        "variance": "σ²ᵧ = (1/Nᵧ) × Σᵢ (xᵢ - μᵧ)² + ε"
+      },
+      "multinomial_parameters": {
+        "feature_probability": "P(xᵢ|y) = (count(xᵢ, y) + α) / (count(y) + α × |vocabulary|)"
+      }
+    },
+    "computational_complexity": {
+      "training_time": "O(n × d) where n = samples, d = features",
+      "prediction_time": "O(d × k) where k = number of classes",
+      "memory_complexity": "O(d × k) for storing parameters",
+      "scalability": "Linear in both samples and features - very efficient"
+    }
+  },
+  
+  "primary_resources": {
+    "foundational_textbooks": [
+      {
+        "title": "Pattern Recognition and Machine Learning",
+        "authors": "Christopher Bishop",
+        "chapters": ["Chapter 4: Linear Models for Classification"],
+        "focus": "Probabilistic approach to linear classification including Naive Bayes",
+        "difficulty": "Advanced",
+        "key_topics": ["Bayesian classification", "Probabilistic discriminative models", "Logistic regression"],
+        "url": "https://www.microsoft.com/en-us/research/uploads/prod/2006/01/Bishop-Pattern-Recognition-and-Machine-Learning-2006.pdf",
+        "access": "Free PDF available"
+      },
+      {
+        "title": "The Elements of Statistical Learning",
+        "authors": "Hastie, Tibshirani, Friedman",
+        "chapters": ["Chapter 6: Kernel Smoothing Methods"],
+        "focus": "Statistical perspective on classification methods",
+        "difficulty": "Advanced",
+        "key_topics": ["Kernel density estimation", "Local methods", "Curse of dimensionality"],
+        "url": "https://web.stanford.edu/~hastie/ElemStatLearn/",
+        "access": "Free PDF available"
+      },
+      {
+        "title": "Machine Learning: A Probabilistic Perspective",
+        "authors": "Kevin Murphy",
+        "chapters": ["Chapter 3: Generative models for discrete data"],
+        "focus": "Comprehensive coverage of Naive Bayes and probabilistic models",
+        "difficulty": "Intermediate-Advanced",
+        "key_topics": ["Bayesian statistics", "Generative models", "Text classification"],
+        "publisher": "MIT Press"
+      },
+      {
+        "title": "An Introduction to Statistical Learning",
+        "authors": "James, Witten, Hastie, Tibshirani",
+        "chapters": ["Chapter 4: Classification"],
+        "focus": "Accessible introduction to classification methods",
+        "difficulty": "Intermediate",
+        "key_topics": ["Linear discriminant analysis", "Quadratic discriminant analysis", "Naive Bayes"],
+        "url": "https://www.statlearning.com/",
+        "access": "Free PDF available"
+      }
+    ],
+    "online_courses": [
+      {
+        "course": "Stanford CS229 - Machine Learning",
+        "instructor": "Andrew Ng",
+        "lectures": ["Lecture 4: Naive Bayes", "Lecture 5: Laplace Smoothing"],
+        "focus": "Mathematical foundations and practical implementation",
+        "duration": "2-3 hours total",
+        "url": "https://see.stanford.edu/Course/CS229",
+        "access": "Free online",
+        "key_topics": ["Generative vs discriminative models", "Text classification", "Event models"]
+      },
+      {
+        "course": "MIT 6.034 Artificial Intelligence",
+        "instructor": "Patrick Winston",
+        "lectures": ["Probabilistic Inference"],
+        "focus": "Intuitive understanding of Bayesian reasoning",
+        "duration": "1 hour",
+        "url": "https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-034-artificial-intelligence-fall-2010/",
+        "access": "Free MIT OpenCourseWare"
+      },
+      {
+        "course": "Coursera - Machine Learning",
+        "instructor": "Andrew Ng",
+        "week": "Week 6: Machine Learning System Design",
+        "focus": "Practical spam classification with Naive Bayes",
+        "duration": "3-4 hours",
+        "platform": "Coursera",
+        "programming": "MATLAB/Octave assignments"
+      }
+    ]
+  },
+  
+  "hands_on_resources": {
+    "programming_frameworks": [
+      {
+        "framework": "scikit-learn",
+        "classes": ["GaussianNB", "MultinomialNB", "BernoulliNB", "ComplementNB"],
+        "features": ["Built-in smoothing", "Partial fit for online learning", "Feature log probability access"],
+        "url": "https://scikit-learn.org/stable/modules/naive_bayes.html",
+        "documentation_quality": "Excellent",
+        "ease_of_use": "High",
+        "performance": "Optimized implementations"
+      },
+      {
+        "framework": "NLTK",
+        "focus": "Text preprocessing and NLP utilities",
+        "classes": ["NaiveBayesClassifier"],
+        "features": ["Text tokenization", "Feature extraction", "Evaluation metrics"],
+        "url": "https://www.nltk.org/book/ch06.html",
+        "use_case": "Educational and text processing"
+      },
+      {
+        "framework": "spaCy",
+        "focus": "Industrial-strength NLP",
+        "integration": "Works well with scikit-learn for text classification",
+        "features": ["Advanced tokenization", "Named entity recognition", "POS tagging"],
+        "url": "https://spacy.io/usage/training#textcat",
+        "performance": "Very fast text processing"
+      }
+    ],
+    "implementation_tutorials": [
+      {
+        "platform": "Scikit-learn Documentation",
+        "focus": "Naive Bayes user guide and examples",
+        "tutorials": ["Text classification", "Gaussian NB", "Multinomial NB"],
+        "url": "https://scikit-learn.org/stable/modules/naive_bayes.html",
+        "time_investment": "2-3 hours",
+        "practical_focus": "Real-world applications and parameter tuning"
+      },
+      {
+        "platform": "Towards Data Science",
+        "focus": "Practical Naive Bayes implementations",
+        "key_articles": ["Naive Bayes from scratch", "Text classification", "Sentiment analysis"],
+        "search_terms": ["naive bayes", "text classification", "bayesian classification"],
+        "quality": "Variable but often high",
+        "filters": "Look for articles with code examples and mathematical explanations"
+      },
+      {
+        "platform": "Kaggle Learn",
+        "course": "Natural Language Processing",
+        "focus": "Text classification with Naive Bayes",
+        "duration": "4-5 hours",
+        "hands_on": "Interactive coding exercises",
+        "datasets": "Real competition datasets"
+      }
+    ],
+    "datasets_for_practice": [
+      {
+        "name": "20 Newsgroups",
+        "purpose": "Text classification across 20 different topics",
+        "size": "~20,000 documents",
+        "complexity": "Medium - good for learning text classification",
+        "url": "https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_20newsgroups.html",
+        "usage": "Document categorization and feature analysis",
+        "challenges": "High-dimensional sparse data, class imbalance"
+      },
+      {
+        "name": "SMS Spam Collection",
+        "purpose": "Binary classification of spam vs ham messages",
+        "size": "5,574 messages",
+        "complexity": "Simple - perfect for beginners",
+        "url": "https://www.kaggle.com/uciml/sms-spam-collection-dataset",
+        "usage": "Binary text classification",
+        "preprocessing": "Text cleaning, tokenization, vectorization"
+      },
+      {
+        "name": "Movie Reviews (IMDB)",
+        "purpose": "Sentiment analysis of movie reviews",
+        "size": "50,000 reviews",
+        "complexity": "Medium - longer texts with nuanced sentiment",
+        "url": "https://www.kaggle.com/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews",
+        "usage": "Sentiment classification",
+        "challenges": "Sarcasm, negation, context dependence"
+      },
+      {
+        "name": "Iris Dataset",
+        "purpose": "Multi-class classification with continuous features",
+        "size": "150 samples, 4 features, 3 classes",
+        "complexity": "Simple - good for understanding Gaussian NB",
+        "url": "https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_iris.html",
+        "usage": "Gaussian Naive Bayes demonstration",
+        "visualization": "Easy to visualize in 2D projections"
+      },
+      {
+        "name": "Wine Quality Dataset",
+        "purpose": "Multi-class classification with numerical features",
+        "size": "6,497 samples, 11 features",
+        "complexity": "Medium - real-world numerical data",
+        "url": "https://www.kaggle.com/uciml/red-wine-quality-cortez-et-al-2009",
+        "usage": "Gaussian NB with feature engineering",
+        "challenges": "Feature scaling, ordinal target variable"
+      },
+      {
+        "name": "Breast Cancer Wisconsin",
+        "purpose": "Binary classification with medical data",
+        "size": "569 samples, 30 features",
+        "complexity": "Medium - correlated features test naive assumption",
+        "url": "https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html",
+        "usage": "Binary classification, feature correlation analysis",
+        "educational_value": "Good for discussing assumption violations"
+      }
+    ]
+  },
+  
+  "text_classification_resources": {
+    "preprocessing_techniques": [
+      {
+        "technique": "Tokenization",
+        "purpose": "Split text into individual tokens (words, characters, n-grams)",
+        "tools": ["NLTK", "spaCy", "scikit-learn CountVectorizer"],
+        "considerations": ["Punctuation handling", "Case normalization", "Unicode issues"]
+      },
+      {
+        "technique": "Stop Word Removal",
+        "purpose": "Remove common words that don't carry much information",
+        "trade_offs": ["Reduces dimensionality vs may lose important context"],
+        "customization": "Domain-specific stop words",
+        "languages": "Multiple language support needed"
+      },
+      {
+        "technique": "Stemming and Lemmatization",
+        "purpose": "Reduce words to their root forms",
+        "stemming": "Crude chopping (Porter stemmer)",
+        "lemmatization": "Proper morphological analysis",
+        "choice": "Lemmatization better for accuracy, stemming faster"
+      },
+      {
+        "technique": "N-gram Extraction",
+        "purpose": "Capture phrase-level information",
+        "unigrams": "Single words - loses context",
+        "bigrams": "Word pairs - captures some context",
+        "trigrams": "Three words - more context but higher dimensionality",
+        "character_ngrams": "Useful for language detection and typos"
+      }
+    ],
+    "vectorization_methods": [
+      {
+        "method": "Count Vectorization",
+        "description": "Raw term frequencies",
+        "advantages": ["Simple", "Interpretable", "Fast"],
+        "disadvantages": ["Doesn't account for document length", "Common words dominate"],
+        "use_case": "Multinomial Naive Bayes"
+      },
+      {
+        "method": "TF-IDF",
+        "description": "Term frequency × Inverse document frequency",
+        "advantages": ["Downweights common terms", "Better feature scaling"],
+        "disadvantages": ["More complex", "Can hurt performance with NB"],
+        "formula": "TF-IDF(t,d) = TF(t,d) × log(N/DF(t))"
+      },
+      {
+        "method": "Binary Vectorization",
+        "description": "Presence/absence of terms",
+        "advantages": ["Simple", "Robust to term frequency variations"],
+        "disadvantages": ["Loses frequency information"],
+        "use_case": "Bernoulli Naive Bayes"
+      }
+    ],
+    "feature_selection": [
+      {
+        "method": "Mutual Information",
+        "purpose": "Select features with highest information gain",
+        "advantages": ["Captures non-linear relationships", "Directly relevant to classification"],
+        "implementation": "sklearn.feature_selection.mutual_info_classif"
+      },
+      {
+        "method": "Chi-square Test",
+        "purpose": "Statistical test for independence",
+        "advantages": ["Fast", "Well-established", "Works well with count data"],
+        "limitations": ["Assumes independence", "Only for non-negative features"]
+      },
+      {
+        "method": "Frequency-based Selection",
+        "purpose": "Remove very rare or very common terms",
+        "min_df": "Minimum document frequency",
+        "max_df": "Maximum document frequency",
+        "rationale": "Rare terms may be noise, common terms may not be discriminative"
+      }
+    ]
+  },
+  
+  "advanced_topics": {
+    "online_learning": {
+      "partial_fit_method": "Incremental learning for streaming data",
+      "advantages": ["Handles data that doesn't fit in memory", "Adapts to concept drift"],
+      "implementation": "scikit-learn partial_fit method",
+      "considerations": ["Feature vocabulary must be fixed", "Initial batch for vocabulary"]
+    },
+    "probability_calibration": {
+      "problem": "Naive Bayes can produce poorly calibrated probabilities",
+      "causes": ["Violated independence assumptions", "Strong conditional dependencies"],
+      "solutions": {
+        "platt_scaling": "Fit sigmoid function to map scores to probabilities",
+        "isotonic_regression": "Non-parametric calibration method"
+      },
+      "evaluation": "Calibration plots and Brier score"
+    },
+    "ensemble_methods": {
+      "voting_classifiers": "Combine multiple NB variants",
+      "bagging": "Bootstrap aggregating with NB base learners",
+      "feature_subsets": "Train NB on different feature subsets",
+      "model_averaging": "Bayesian model averaging across NB variants"
+    },
+    "hierarchical_classification": {
+      "problem": "Multi-level category hierarchies",
+      "approaches": ["Flat classification", "Hierarchical classification", "Local classifier per node"],
+      "advantages": "Leverages hierarchical structure for better accuracy"
+    }
+  },
+  
+  "evaluation_and_validation": {
+    "metrics_for_text_classification": [
+      {
+        "metric": "Accuracy",
+        "when_appropriate": "Balanced datasets with equal class importance",
+        "limitations": "Misleading for imbalanced datasets"
+      },
+      {
+        "metric": "Precision, Recall, F1-Score",
+        "when_appropriate": "Imbalanced datasets or when different error types have different costs",
+        "micro_averaging": "Global calculation across all classes",
+        "macro_averaging": "Average metrics across classes",
+        "weighted_averaging": "Class-frequency weighted average"
+      },
+      {
+        "metric": "Matthews Correlation Coefficient",
+        "advantages": "Single metric that works well for imbalanced datasets",
+        "range": "[-1, 1] where 1 is perfect, 0 is random, -1 is completely wrong"
+      },
+      {
+        "metric": "Log-likelihood",
+        "purpose": "Evaluate probability estimates rather than just predictions",
+        "advantages": "Measures calibration quality",
+        "formula": "LL = Σᵢ log P(yᵢ | xᵢ)"
+      }
+    ],
+    "cross_validation_strategies": [
+      {
+        "strategy": "Stratified K-Fold",
+        "purpose": "Maintain class distribution across folds",
+        "recommendation": "Default choice for most classification problems"
+      },
+      {
+        "strategy": "Time Series Split",
+        "purpose": "Respect temporal ordering in time-sensitive data",
+        "application": "News classification, social media analysis"
+      },
+      {
+        "strategy": "Group K-Fold",
+        "purpose": "Ensure samples from same source don't appear in both train and test",
+        "application": "Multi-document datasets, author classification"
+      }
+    ],
+    "baseline_comparisons": [
+      {
+        "baseline": "Majority Class Classifier",
+        "purpose": "Simplest possible baseline",
+        "implementation": "Always predict most frequent class"
+      },
+      {
+        "baseline": "Random Classifier",
+        "purpose": "Expected performance of random guessing",
+        "stratified": "Respect class distribution in random predictions"
+      },
+      {
+        "baseline": "Logistic Regression",
+        "purpose": "Simple linear discriminative model",
+        "comparison": "Often competitive with Naive Bayes, good sanity check"
+      }
+    ]
+  },
+  
+  "real_world_applications": {
+    "spam_filtering": {
+      "challenge": "Classify emails as spam or legitimate",
+      "features": ["Email headers", "Body text", "Sender reputation"],
+      "preprocessing": ["HTML tag removal", "URL normalization", "Character encoding"],
+      "adaptive_learning": "Online learning to adapt to new spam patterns",
+      "evaluation_considerations": ["False positives very costly", "Need for real-time processing"]
+    },
+    "sentiment_analysis": {
+      "applications": ["Product reviews", "Social media monitoring", "Customer feedback"],
+      "challenges": ["Sarcasm detection", "Context dependence", "Domain adaptation"],
+      "feature_engineering": ["Emoticons", "Negation handling", "Aspect-based sentiment"],
+      "evaluation": "Human annotation agreement, domain-specific metrics"
+    },
+    "document_classification": {
+      "use_cases": ["News categorization", "Legal document classification", "Scientific paper categorization"],
+      "scalability_considerations": ["Large vocabularies", "High-dimensional sparse data"],
+      "hierarchical_categories": "Multi-level classification taxonomies",
+      "multilingual_support": "Cross-language classification challenges"
+    },
+    "medical_diagnosis": {
+      "application": "Symptom-based preliminary diagnosis",
+      "features": "Binary symptom presence/absence",
+      "model_choice": "Bernoulli Naive Bayes often appropriate",
+      "ethical_considerations": ["Explanation requirements", "Liability issues", "Bias in training data"],
+      "validation": "Clinical validation required, not just statistical metrics"
+    },
+    "recommendation_systems": {
+      "content_based_filtering": "Recommend items based on content similarity",
+      "user_profiling": "Model user preferences as probability distributions",
+      "cold_start_problem": "Handle new users/items with limited data",
+      "hybrid_approaches": "Combine with collaborative filtering"
+    }
+  },
+  
+  "week_schedule": {
+    "day_1": {
+      "focus": "Bayesian Foundations and Probability Theory",
+      "morning": ["Bayes' theorem derivation and intuition", "Prior, likelihood, and posterior concepts"],
+      "afternoon": ["Conditional probability and independence", "Medical diagnosis example"],
+      "evening": ["Probability estimation and maximum likelihood"],
+      "deliverable": "Implementation of Bayes' theorem calculator with real examples"
+    },
+    "day_2": {
+      "focus": "Gaussian Naive Bayes Implementation",
+      "morning": ["Gaussian distributions and parameter estimation", "Naive independence assumption"],
+      "afternoon": ["From scratch implementation", "Numerical stability considerations"],
+      "evening": ["Decision boundaries and probability visualization"],
+      "deliverable": "Complete Gaussian Naive Bayes classifier"
+    },
+    "day_3": {
+      "focus": "Text Classification and Multinomial Naive Bayes",
+      "morning": ["Text preprocessing pipeline", "Vectorization methods"],
+      "afternoon": ["Multinomial distribution and count data", "Smoothing techniques"],
+      "evening": ["Feature importance and interpretation"],
+      "deliverable": "Text classification system for spam detection"
+    },
+    "day_4": {
+      "focus": "Binary Features and Bernoulli Naive Bayes",
+      "morning": ["Binary feature modeling", "Bernoulli distribution"],
+      "afternoon": ["Medical diagnosis application", "Presence/absence features"],
+      "evening": ["Comparison with other NB variants"],
+      "deliverable": "Binary feature classifier for symptom diagnosis"
+    },
+    "day_5": {
+      "focus": "Advanced Techniques and Model Selection",
+      "morning": ["Model ensemble and automatic selection", "Cross-validation strategies"],
+      "afternoon": ["Probability calibration", "Uncertainty quantification"],
+      "evening": ["Online learning and streaming data"],
+      "deliverable": "Ensemble Naive Bayes with model selection"
+    },
+    "day_6": {
+      "focus": "Real-World Applications and Evaluation",
+      "morning": ["20 newsgroups dataset analysis", "Large-scale text classification"],
+      "afternoon": ["Performance evaluation and metrics", "Error analysis"],
+      "evening": ["Production considerations and deployment"],
+      "deliverable": "Complete real-world text classification pipeline"
+    },
+    "day_7": {
+      "focus": "Advanced Topics and Modern Connections",
+      "morning": ["Probabilistic interpretation of neural networks", "Bayesian deep learning"],
+      "afternoon": ["Information theory connections", "Feature selection methods"],
+      "evening": ["Integration with modern ML workflows"],
+      "deliverable": "Analysis of naive assumption violations and mitigation strategies"
+    }
+  },
+  
+  "assessment_and_validation": {
+    "theoretical_understanding": [
+      "Derive the Naive Bayes classification rule from Bayes' theorem",
+      "Explain why the naive independence assumption is both problematic and useful",
+      "Analyze the effect of smoothing parameters on model behavior",
+      "Compare and contrast generative vs discriminative approaches",
+      "Discuss the relationship between Naive Bayes and linear models",
+      "Explain probability calibration and when it's needed",
+      "Analyze computational complexity and scalability considerations"
+    ],
+    "practical_challenges": [
+      {
+        "challenge": "Custom Domain Text Classification",
+        "description": "Build classifier for specialized domain (medical, legal, technical)",
+        "evaluation_criteria": ["Preprocessing pipeline quality", "Feature engineering creativity", "Performance on test set"],
+        "time_limit": "4 hours",
+        "difficulty": "Intermediate"
+      },
+      {
+        "challenge": "Online Learning System",
+        "description": "Implement streaming Naive Bayes that adapts to concept drift",
+        "requirements": ["Incremental learning", "Performance monitoring", "Adaptation detection"],
+        "evaluation": "Performance on synthetic drift datasets",
+        "difficulty": "Advanced"
+      },
+      {
+        "challenge": "Multi-Modal Feature Integration",
+        "description": "Combine text, numerical, and categorical features in single NB model",
+        "requirements": ["Feature type handling", "Proper independence modeling", "Ensemble approaches"],
+        "evaluation": "Cross-validated performance comparison",
+        "difficulty": "Advanced"
+      }
+    ],
+    "project_ideas": [
+      {
+        "project": "Fake News Detection",
+        "scope": "Build system to identify potentially false news articles",
+        "features": ["Article text", "Source credibility", "Social sharing patterns"],
+        "challenges": ["Bias in training data", "Adversarial examples", "Explanation requirements"],
+        "ethical_considerations": "Impact of false positives/negatives on information freedom"
+      },
+      {
+        "project": "Customer Support Ticket Routing",
+        "scope": "Automatically route support tickets to appropriate departments",
+        "features": ["Ticket text", "Customer history", "Product information"],
+        "challenges": ["Multi-label classification", "Hierarchical categories", "Cost-sensitive errors"],
+        "business_impact": "Reduced response time and improved customer satisfaction"
+      },
+      {
+        "project": "Scientific Paper Classification",
+        "scope": "Categorize research papers by field and methodology",
+        "features": ["Abstract text", "Keywords", "Citation patterns"],
+        "challenges": ["Technical vocabulary", "Multi-disciplinary papers", "Emerging fields"],
+        "research_value": "Bibliometric analysis and research trend identification"
+      },
+      {
+        "project": "Social Media Content Moderation",
+        "scope": "Identify inappropriate content for automated review",
+        "features": ["Post text", "User behavior", "Community context"],
+        "challenges": ["Context sensitivity", "Cultural differences", "Adversarial users"],
+        "ethical_considerations": "Free speech vs safety, bias in moderation decisions"
+      }
+    ]
+  },
+  
+  "visualization_and_interpretation": {
+    "probability_visualization": [
+      {
+        "type": "Class Probability Heatmaps",
+        "purpose": "Visualize how probabilities change across feature space",
+        "implementation": "2D contour plots for feature pairs",
+        "insights": "Decision boundaries and uncertainty regions"
+      },
+      {
+        "type": "Feature Likelihood Distributions",
+        "purpose": "Show learned probability distributions for each feature-class combination",
+        "implementation": "Overlapping histograms or density plots",
+        "insights": "Feature discriminative power and distribution assumptions"
+      },
+      {
+        "type": "Calibration Plots",
+        "purpose": "Assess quality of probability estimates",
+        "implementation": "Predicted vs actual probability scatter plots",
+        "insights": "Over/under-confidence patterns"
+      }
+    ],
+    "text_classification_visualization": [
+      {
+        "type": "Word Clouds by Class",
+        "purpose": "Show most discriminative terms for each class",
+        "implementation": "Size terms by log-probability ratios",
+        "insights": "Interpretable feature importance"
+      },
+      {
+        "type": "Feature Importance Bar Charts",
+        "purpose": "Quantify and rank feature contributions",
+        "implementation": "Log-probability differences between classes",
+        "insights": "Which features drive classification decisions"
+      },
+      {
+        "type": "Confusion Matrix Heatmaps",
+        "purpose": "Analyze classification errors and confusable classes",
+        "implementation": "Annotated heatmaps with class names",
+        "insights": "Systematic error patterns"
+      }
+    ],
+    "model_comparison_plots": [
+      {
+        "type": "ROC Curves",
+        "purpose": "Compare binary classification performance",
+        "implementation": "True positive rate vs false positive rate",
+        "insights": "Performance across different thresholds"
+      },
+      {
+        "type": "Precision-Recall Curves",
+        "purpose": "Better for imbalanced datasets",
+        "implementation": "Precision vs recall trade-offs",
+        "insights": "Performance on minority classes"
+      },
+      {
+        "type": "Learning Curves",
+        "purpose": "Analyze performance vs training set size",
+        "implementation": "Training and validation accuracy vs sample size",
+        "insights": "Data efficiency and overfitting tendencies"
+      }
+    ]
+  },
+  
+  "common_pitfalls_and_solutions": {
+    "data_related_issues": [
+      {
+        "pitfall": "Zero Probabilities",
+        "cause": "Unseen feature values in test data",
+        "symptoms": "Infinite negative log-likelihood, classification failures",
+        "solution": "Apply appropriate smoothing (Laplace, add-k)",
+        "prevention": "Always use smoothing, even with large datasets"
+      },
+      {
+        "pitfall": "Feature Scaling Issues",
+        "cause": "Very different scales for numerical features",
+        "symptoms": "Gaussian NB dominated by high-variance features",
+        "solution": "Standardize features or use robust scaling",
+        "prevention": "Always examine feature distributions"
+      },
+      {
+        "pitfall": "Class Imbalance",
+        "cause": "Heavily skewed class distributions",
+        "symptoms": "Model always predicts majority class",
+        "solution": "Adjust class priors, use balanced metrics, consider resampling",
+        "prevention": "Analyze class distribution early"
+      }
+    ],
+    "modeling_issues": [
+      {
+        "pitfall": "Violated Independence Assumptions",
+        "cause": "Highly correlated features",
+        "symptoms": "Overconfident probability estimates",
+        "solution": "Feature selection, PCA, or ensemble methods",
+        "prevention": "Analyze feature correlations"
+      },
+      {
+        "pitfall": "Inappropriate Distribution Assumptions",
+        "cause": "Using Gaussian NB with non-normal features",
+        "symptoms": "Poor probability estimates, biased predictions",
+        "solution": "Transform features or use appropriate NB variant",
+        "prevention": "Visualize feature distributions by class"
+      },
+      {
+        "pitfall": "Numerical Underflow",
+        "cause": "Multiplying many small probabilities",
+        "symptoms": "Probabilities become zero, numerical instability",
+        "solution": "Use log-space computations throughout",
+        "prevention": "Implement in log-space from the beginning"
+      }
+    ],
+    "implementation_issues": [
+      {
+        "pitfall": "Inconsistent Preprocessing",
+        "cause": "Different preprocessing for train and test data",
+        "symptoms": "Performance gap between validation and test",
+        "solution": "Use sklearn pipelines or careful preprocessing tracking",
+        "prevention": "Always fit preprocessing on training data only"
+      },
+      {
+        "pitfall": "Feature Leakage",
+        "cause": "Including future information or target-derived features",
+        "symptoms": "Unrealistically high performance",
+        "solution": "Careful feature engineering and temporal validation",
+        "prevention": "Think critically about feature generation process"
+      },
+      {
+        "pitfall": "Inadequate Evaluation",
+        "cause": "Using accuracy on imbalanced data, not testing on new domains",
+        "symptoms": "Overestimated model performance",
+        "solution": "Use appropriate metrics, test on diverse datasets",
+        "prevention": "Design comprehensive evaluation strategy"
+      }
+    ]
+  },
+  
+  "performance_optimization": {
+    "computational_efficiency": [
+      {
+        "technique": "Sparse Matrix Operations",
+        "application": "Text classification with large vocabularies",
+        "benefit": "Reduced memory usage and faster computation",
+        "implementation": "scipy.sparse matrices, sklearn sparse support"
+      },
+      {
+        "technique": "Vectorized Operations",
+        "application": "Batch prediction and training",
+        "benefit": "Leverage NumPy/BLAS optimizations",
+        "implementation": "Avoid Python loops, use broadcasting"
+      },
+      {
+        "technique": "Feature Hashing",
+        "application": "Very large vocabulary text problems",
+        "benefit": "Fixed memory footprint, handles new features",
+        "trade_off": "Some hash collisions, reduced interpretability"
+      },
+      {
+        "technique": "Incremental Learning",
+        "application": "Streaming data or memory-constrained environments",
+        "benefit": "Process data in batches, adapt to new patterns",
+        "implementation": "partial_fit methods in sklearn"
+      }
+    ],
+    "memory_optimization": [
+      {
+        "strategy": "Feature Selection",
+        "purpose": "Reduce dimensionality and memory usage",
+        "methods": ["Mutual information", "Chi-square", "Frequency filtering"],
+        "benefit": "Faster training and prediction, less overfitting"
+      },
+      {
+        "strategy": "Data Type Optimization",
+        "purpose": "Use appropriate numerical precision",
+        "methods": ["Float32 instead of float64", "Integer types for counts"],
+        "benefit": "Reduced memory usage with minimal accuracy loss"
+      },
+      {
+        "strategy": "Lazy Loading",
+        "purpose": "Load data on demand for large datasets",
+        "implementation": "Generators, memory-mapped files",
+        "benefit": "Handle datasets larger than available RAM"
+      }
+    ]
+  },
+  
+  "modern_extensions": {
+    "deep_learning_connections": [
+      {
+        "connection": "Neural Language Models",
+        "relationship": "Modern BERT-style models can be viewed as sophisticated feature extractors for NB",
+        "application": "Use pre-trained embeddings as features for NB classifier",
+        "benefit": "Combine interpretability of NB with power of deep representations"
+      },
+      {
+        "connection": "Attention Mechanisms",
+        "relationship": "Attention weights similar to feature importance in NB",
+        "insight": "Both methods identify which parts of input are most relevant",
+        "research": "Attention-based Naive Bayes models"
+      },
+      {
+        "connection": "Bayesian Neural Networks",
+        "relationship": "Probabilistic interpretation of neural network predictions",
+        "application": "Use NB insights to improve uncertainty quantification in deep models",
+        "trend": "Growing interest in explainable and uncertain AI"
+      }
+    ],
+    "ensemble_integration": [
+      {
+        "method": "Stacking",
+        "role": "NB as base learner in ensemble",
+        "advantage": "Fast training, good diversity from other algorithms",
+        "implementation": "Combine with SVM, Random Forest, etc."
+      },
+      {
+        "method": "Voting Classifiers",
+        "role": "Equal or weighted voting with other algorithms",
+        "advantage": "Robust predictions, reduced overfitting",
+        "tuning": "Optimize voting weights based on validation performance"
+      },
+      {
+        "method": "Multi-level Ensembles",
+        "role": "Different NB variants for different feature types",
+        "example": "Gaussian NB for numerical, Multinomial for text features",
+        "advantage": "Leverage strengths of each variant"
+      }
+    ]
+  },
+  
+  "research_frontiers": {
+    "current_research_directions": [
+      {
+        "area": "Structured Naive Bayes",
+        "description": "Relaxing independence assumptions with structured models",
+        "methods": ["Tree-augmented Naive Bayes", "Hidden Naive Bayes"],
+        "challenges": "Maintaining computational efficiency while improving modeling"
+      },
+      {
+        "area": "Online Bayesian Learning",
+        "description": "Adaptive learning with concept drift",
+        "methods": ["Variational Bayes", "Particle filters", "Bayesian online learning"],
+        "applications": "Streaming text classification, adaptive spam filtering"
+      },
+      {
+        "area": "Fairness in Probabilistic Models",
+        "description": "Ensuring equitable treatment across demographic groups",
+        "methods": ["Fair representation learning", "Bias-aware smoothing"],
+        "challenges": "Balancing accuracy with fairness constraints"
+      },
+      {
+        "area": "Explainable AI with Naive Bayes",
+        "description": "Leveraging interpretability for explainable predictions",
+        "methods": ["Feature contribution decomposition", "Counterfactual explanations"],
+        "applications": "Medical diagnosis, legal decision support"
+      }
+    ],
+    "open_problems": [
+      {
+        "problem": "Handling Complex Dependencies",
+        "description": "Better modeling of feature interactions while maintaining efficiency",
+        "current_approaches": ["Feature engineering", "Kernel methods", "Neural networks"],
+        "research_gap": "Principled way to identify and model important dependencies"
+      },
+      {
+        "problem": "Multi-modal Data Integration",
+        "description": "Combining text, images, and structured data in single Bayesian framework",
+        "challenges": ["Different data types", "Varying feature scales", "Cross-modal dependencies"],
+        "potential_solutions": ["Hierarchical Bayesian models", "Multi-view learning"]
+      },
+      {
+        "problem": "Calibration in High Dimensions",
+        "description": "Reliable probability estimates with many features",
+        "current_issues": ["Independence violations compound in high dimensions"],
+        "research_directions": ["Regularization techniques", "Ensemble calibration"]
+      }
+    ]
+  },
+  
+  "career_applications": {
+    "industry_roles": {
+      "data_scientist": [
+        "Build text classification systems for business applications",
+        "Perform exploratory data analysis with probabilistic thinking",
+        "Create baseline models for comparison with complex algorithms",
+        "Explain model predictions to business stakeholders"
+      ],
+      "ml_engineer": [
+        "Implement fast, scalable classification systems",
+        "Deploy real-time prediction services",
+        "Monitor model performance and detect drift",
+        "Optimize models for production constraints"
+      ],
+      "research_scientist": [
+        "Develop new probabilistic models and extensions",
+        "Publish research on Bayesian methods and applications",
+        "Explore connections between classical and modern ML",
+        "Advance theoretical understanding of probabilistic learning"
+      ],
+      "product_manager": [
+        "Understand probabilistic model capabilities and limitations",
+        "Make informed decisions about model interpretability requirements",
+        "Communicate uncertainty and confidence to stakeholders",
+        "Design products that leverage probabilistic insights"
+      ]
+    },
+    "skill_development": [
+      {
+        "skill": "Probabilistic Reasoning",
+        "development": "Practice with real datasets, study Bayesian statistics",
+        "application": "All areas of machine learning and data science",
+        "advancement": "Foundation for advanced probabilistic models"
+      },
+      {
+        "skill": "Text Processing",
+        "development": "Work with diverse text datasets, learn NLP techniques",
+        "application": "Information retrieval, content analysis, chatbots",
+        "advancement": "Bridge to modern NLP and language models"
+      },
+      {
+        "skill": "Model Interpretation",
+        "development": "Practice explaining model decisions, create visualizations",
+        "application": "Regulated industries, high-stakes decision making",
+        "advancement": "Essential for responsible AI deployment"
+      }
+    ]
+  },
+  
+  "integration_with_course": {
+    "connections_to_previous_weeks": [
+      {
+        "week": "Week 3: Probability and Statistics",
+        "connection": "Direct application of Bayes' theorem and conditional probability",
+        "build_upon": "Probability distributions, statistical inference"
+      },
+      {
+        "week": "Week 17: Support Vector Machines",
+        "connection": "Comparison of generative vs discriminative approaches",
+        "contrast": "Probabilistic vs geometric margins"
+      },
+      {
+        "week": "Week 16: Ensemble Methods",
+        "connection": "Naive Bayes as base learner in ensemble systems",
+        "synergy": "Diversity benefits from different model assumptions"
+      }
+    ],
+    "preparation_for_future_weeks": [
+      {
+        "week": "Week 19: Decision Trees",
+        "preparation": "Information theory concepts, feature selection methods",
+        "connection": "Both use probabilistic reasoning for classification"
+      },
+      {
+        "week": "Week 20: Random Forests",
+        "preparation": "Ensemble thinking, bias-variance tradeoffs",
+        "connection": "Combining simple models for better performance"
+      },
+      {
+        "week": "Future NLP weeks",
+        "preparation": "Text classification foundations, feature engineering",
+        "connection": "Building blocks for modern language processing"
+      }
+    ]
+  },
+  
+  "motivation_and_inspiration": {
+    "historical_significance": "Naive Bayes represents one of the earliest successful applications of probability theory to machine learning, demonstrating the power of principled mathematical approaches to AI problems.",
+    
+    "practical_impact": "Despite its simplicity, Naive Bayes powers many real-world systems including spam filters that protect millions of users daily, content recommendation systems, and automated customer service routing.",
+    
+    "educational_value": "Learning Naive Bayes provides deep insights into the probabilistic foundations of machine learning, serving as a bridge between classical statistics and modern AI methods.",
+    
+    "future_relevance": "As AI systems become more widespread, the interpretability and uncertainty quantification capabilities of probabilistic models like Naive Bayes become increasingly valuable for responsible AI deployment.",
+    
+    "personal_growth": "Mastering Naive Bayes develops critical thinking about model assumptions, probability theory, and the trade-offs between model complexity and interpretability - skills essential for any serious machine learning practitioner."
+  }
+}

@@ -1,0 +1,371 @@
+{
+  "week": 1,
+  "phase": 1,
+  "topic": "Linear Algebra Through the Lens of Data",
+  "description": "Essential resources for understanding linear algebra as the foundation of machine learning",
+  "categories": {
+    "essential_videos": {
+      "title": "Must-Watch Videos",
+      "description": "Visual explanations that make linear algebra intuitive",
+      "resources": [
+        {
+          "title": "Essence of Linear Algebra - 3Blue1Brown",
+          "url": "https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab",
+          "type": "video_series",
+          "duration": "3-4 hours total",
+          "difficulty": "beginner",
+          "why_valuable": "Grant Sanderson's visual approach makes abstract concepts concrete. The geometric intuition he provides is exactly what you need for ML.",
+          "specific_videos": [
+            {
+              "title": "Vectors, what even are they?",
+              "url": "https://www.youtube.com/watch?v=fNk_zzaMoSs",
+              "duration": "10 min",
+              "key_concepts": ["Vector visualization", "Linear combinations", "Span"]
+            },
+            {
+              "title": "Linear transformations and matrices",
+              "url": "https://www.youtube.com/watch?v=kYB8IZa5AuE",
+              "duration": "11 min", 
+              "key_concepts": ["Matrix as transformation", "Determinant meaning", "Visual matrix multiplication"]
+            },
+            {
+              "title": "The determinant",
+              "url": "https://www.youtube.com/watch?v=Ip3X9LOh2dk",
+              "duration": "11 min",
+              "key_concepts": ["Area scaling", "Orientation", "When systems have solutions"]
+            }
+          ]
+        },
+        {
+          "title": "Linear Algebra for Machine Learning - StatQuest",
+          "url": "https://www.youtube.com/watch?v=fNk_zzaMoSs",
+          "type": "video",
+          "duration": "15 min",
+          "difficulty": "beginner",
+          "why_valuable": "Josh Starmer connects linear algebra directly to ML applications with clear explanations."
+        }
+      ]
+    },
+    "interactive_tools": {
+      "title": "Hands-On Learning",
+      "description": "Interactive tools to visualize and experiment with linear algebra",
+      "resources": [
+        {
+          "title": "Linear Algebra Immersive Math",
+          "url": "http://immersivemath.com/ila/index.html",
+          "type": "interactive_textbook",
+          "difficulty": "beginner",
+          "why_valuable": "Interactive 3D visualizations let you manipulate vectors and matrices to see how they behave. Perfect for building intuition.",
+          "best_chapters": [
+            "Chapter 2: Vectors",
+            "Chapter 3: The Dot Product", 
+            "Chapter 4: The Vector Product",
+            "Chapter 6: Matrices"
+          ]
+        },
+        {
+          "title": "Matrix Multiplication Visualizer",
+          "url": "http://matrixmultiplication.xyz/",
+          "type": "interactive_tool",
+          "difficulty": "beginner",
+          "why_valuable": "Step-by-step matrix multiplication with visual highlighting. Great for understanding the mechanics."
+        },
+        {
+          "title": "Eigenvectors and Eigenvalues Visualizer",
+          "url": "https://setosa.io/ev/eigenvectors-and-eigenvalues/",
+          "type": "interactive_visualization",
+          "difficulty": "intermediate",
+          "why_valuable": "Beautiful interactive explanation of eigenvectors - crucial for PCA and many ML algorithms."
+        },
+        {
+          "title": "Linear Transformation Playground",
+          "url": "https://ncase.me/matrix/",
+          "type": "interactive_tool",
+          "difficulty": "beginner",
+          "why_valuable": "Drag and manipulate 2D transformations to see how matrices transform space. Builds geometric intuition."
+        }
+      ]
+    },
+    "ml_connections": {
+      "title": "ML Applications",
+      "description": "How linear algebra directly applies to machine learning",
+      "resources": [
+        {
+          "title": "Mathematics for Machine Learning - Chapter 2",
+          "url": "https://mml-book.github.io/book/mml-book.pdf",
+          "type": "textbook_chapter",
+          "pages": "15-37",
+          "difficulty": "intermediate",
+          "why_valuable": "Connects linear algebra concepts directly to ML applications. Free and comprehensive.",
+          "key_sections": [
+            "2.3 Solving Systems of Linear Equations",
+            "2.4 Vector Spaces",
+            "2.7 Matrix Decomposition"
+          ]
+        },
+        {
+          "title": "PageRank Algorithm Explained",
+          "url": "https://www.youtube.com/watch?v=JGQe4kiPnrU",
+          "type": "video",
+          "duration": "20 min",
+          "difficulty": "intermediate",
+          "why_valuable": "See how Google's PageRank is pure linear algebra - finding eigenvectors of massive matrices."
+        },
+        {
+          "title": "Principal Component Analysis (PCA) from Scratch",
+          "url": "https://sebastianraschka.com/Articles/2014_pca_step_by_step.html",
+          "type": "tutorial",
+          "difficulty": "intermediate",
+          "why_valuable": "Step-by-step implementation showing how PCA is just eigenvalue decomposition of covariance matrices."
+        },
+        {
+          "title": "Linear Regression via Linear Algebra",
+          "url": "https://www.youtube.com/watch?v=sCOuLx22F0k",
+          "type": "video",
+          "duration": "12 min",
+          "difficulty": "beginner",
+          "why_valuable": "Shows how simple linear regression is actually solving a linear algebra problem with the normal equation."
+        }
+      ]
+    },
+    "practice_problems": {
+      "title": "Practice & Exercises",
+      "description": "Hands-on practice to solidify understanding",
+      "resources": [
+        {
+          "title": "Khan Academy Linear Algebra",
+          "url": "https://www.khanacademy.org/math/linear-algebra",
+          "type": "course",
+          "difficulty": "beginner",
+          "why_valuable": "Structured practice problems with instant feedback. Great for drilling fundamentals.",
+          "recommended_sections": [
+            "Vectors and spaces",
+            "Matrix transformations",
+            "Matrix operations"
+          ]
+        },
+        {
+          "title": "MIT 18.06 Problem Sets",
+          "url": "https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/assignments/",
+          "type": "problem_sets",
+          "difficulty": "advanced",
+          "why_valuable": "Classic linear algebra problems from Gilbert Strang's famous course. Challenging but comprehensive."
+        },
+        {
+          "title": "Linear Algebra Practice Problems",
+          "url": "https://www.mathpages.com/home/kmath569/kmath569.htm",
+          "type": "practice_problems",
+          "difficulty": "intermediate",
+          "why_valuable": "Focused problems on matrix operations, determinants, and systems of equations."
+        }
+      ]
+    },
+    "deep_dive": {
+      "title": "Deep Dive Resources",
+      "description": "For those who want to go deeper into the mathematical foundations",
+      "resources": [
+        {
+          "title": "Linear Algebra Done Right - Sheldon Axler",
+          "url": "https://linear.axler.net/",
+          "type": "textbook",
+          "difficulty": "advanced",
+          "why_valuable": "The gold standard linear algebra textbook. Builds understanding from first principles without heavy computation.",
+          "note": "More theoretical than computational - great for deep understanding"
+        },
+        {
+          "title": "MIT 18.06 - Linear Algebra (Gilbert Strang)",
+          "url": "https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/",
+          "type": "full_course",
+          "difficulty": "intermediate",
+          "why_valuable": "The most famous linear algebra course ever. Strang's insights into the geometric meaning are unparalleled.",
+          "best_lectures": [
+            "Lecture 1: The geometry of linear equations",
+            "Lecture 3: Multiplication and inverse matrices",
+            "Lecture 21: Eigenvalues and eigenvectors"
+          ]
+        },
+        {
+          "title": "Computational Linear Algebra for Coders",
+          "url": "https://github.com/fastai/numerical-linear-algebra",
+          "type": "course",
+          "difficulty": "advanced",
+          "why_valuable": "Fast.ai's computational approach - focuses on implementing efficient algorithms from scratch."
+        }
+      ]
+    },
+    "coding_resources": {
+      "title": "Coding & Implementation",
+      "description": "Resources for implementing linear algebra from scratch",
+      "resources": [
+        {
+          "title": "NumPy for Linear Algebra",
+          "url": "https://numpy.org/doc/stable/user/tutorial-svd.html",
+          "type": "documentation",
+          "difficulty": "intermediate",
+          "why_valuable": "Learn how professional libraries implement linear algebra operations efficiently."
+        },
+        {
+          "title": "Matrix Operations from Scratch in Python",
+          "url": "https://machinelearningmastery.com/matrix-operations-for-machine-learning/",
+          "type": "tutorial",
+          "difficulty": "beginner",
+          "why_valuable": "Step-by-step implementation of matrix operations without NumPy - perfect for understanding."
+        },
+        {
+          "title": "Visualizing Linear Algebra with Python",
+          "url": "https://github.com/engineersCode/EngComp4_landlinear",
+          "type": "github_repo",
+          "difficulty": "intermediate",
+          "why_valuable": "Jupyter notebooks that visualize linear algebra concepts with matplotlib."
+        },
+        {
+          "title": "Linear Algebra Cheat Sheet",
+          "url": "https://www.ml-cheatsheet.com/math_notation.html#linear-algebra",
+          "type": "reference",
+          "difficulty": "all_levels",
+          "why_valuable": "Quick reference for notation and formulas. Bookmark this!"
+        }
+      ]
+    },
+    "historical_context": {
+      "title": "History & Motivation",
+      "description": "Understanding why linear algebra developed and its historical significance",
+      "resources": [
+        {
+          "title": "The History of Linear Algebra",
+          "url": "https://mathshistory.st-andrews.ac.uk/HistTopics/Matrices_and_determinants/",
+          "type": "article",
+          "difficulty": "beginner",
+          "why_valuable": "Understanding the historical development helps motivate why these concepts matter."
+        },
+        {
+          "title": "How Linear Algebra Conquered Machine Learning",
+          "url": "https://www.quantamagazine.org/how-linear-algebra-is-secretly-the-foundation-of-machine-learning-20220616/",
+          "type": "article",
+          "difficulty": "beginner",
+          "why_valuable": "Great overview of why linear algebra became central to modern AI."
+        },
+        {
+          "title": "The Matrix Cookbook",
+          "url": "https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf",
+          "type": "reference",
+          "difficulty": "advanced",
+          "why_valuable": "Comprehensive reference for matrix operations and identities. The 'cookbook' every ML practitioner needs."
+        }
+      ]
+    }
+  },
+  "weekly_schedule": {
+    "day_1": {
+      "morning_theory": {
+        "primary": "Essence of Linear Algebra - Vectors",
+        "supplementary": "Immersive Math Chapter 2",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement vector operations in exercises.py",
+        "supplementary": "Matrix multiplication visualizer",
+        "duration": "25 min"
+      }
+    },
+    "day_2": {
+      "morning_theory": {
+        "primary": "Essence of Linear Algebra - Linear Transformations",
+        "supplementary": "Linear transformation playground",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement matrix operations in exercises.py",
+        "supplementary": "Mathematics for ML Chapter 2.3",
+        "duration": "25 min"
+      }
+    },
+    "day_3": {
+      "morning_theory": {
+        "primary": "Linear Regression via Linear Algebra video",
+        "supplementary": "Khan Academy - Matrix operations",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement normal equation for linear regression",
+        "supplementary": "Compare with sklearn implementation",
+        "duration": "25 min"
+      }
+    },
+    "day_4": {
+      "morning_theory": {
+        "primary": "Essence of Linear Algebra - Determinant",
+        "supplementary": "PageRank algorithm explanation",
+        "duration": "25 min"
+      },
+      "afternoon_coding": {
+        "primary": "Implement 2D transformations and data analysis functions",
+        "supplementary": "Create your own visualizations",
+        "duration": "25 min"
+      }
+    }
+  },
+  "assessment_criteria": {
+    "understanding": {
+      "geometric_intuition": "Can you visualize what matrix operations do to vectors and spaces?",
+      "ml_connections": "Do you see how linear algebra enables machine learning algorithms?",
+      "implementation": "Can you implement basic operations from scratch?"
+    },
+    "practical_skills": {
+      "matrix_operations": "Comfortable with matrix multiplication, transpose, inverse",
+      "vector_operations": "Understanding dot products, norms, and angles",
+      "transformations": "Can apply matrices to transform geometric objects"
+    },
+    "conceptual_depth": {
+      "systems_of_equations": "Understanding when solutions exist and are unique",
+      "linear_independence": "Grasping the concept of basis and span",
+      "eigenvalues": "Basic understanding of eigenvectors and their significance"
+    }
+  },
+  "common_struggles": {
+    "matrix_multiplication": {
+      "problem": "Confusion about dimensions and the 'dot product of rows and columns'",
+      "solution": "Use the matrix multiplication visualizer and practice with small examples",
+      "tip": "Remember: (m×k) × (k×n) = (m×n), and each element is row·column"
+    },
+    "geometric_vs_algebraic": {
+      "problem": "Seeing matrices as just number arrays instead of transformations",
+      "solution": "Use the 3Blue1Brown videos and linear transformation playground",
+      "tip": "Always ask: 'What does this matrix do to the space?'"
+    },
+    "when_to_use_what": {
+      "problem": "Not knowing when different operations are useful",
+      "solution": "Focus on the ML applications sections and connect each operation to real uses",
+      "tip": "Every operation has a purpose in ML - learn the 'why' not just the 'how'"
+    }
+  },
+  "success_metrics": {
+    "week_completion": {
+      "all_exercises_implemented": "Complete all TODO functions in exercises.py",
+      "tests_passing": "Run and pass all test cases",
+      "practical_demonstrations": "Successfully run all demo functions"
+    },
+    "understanding_checkpoints": {
+      "explain_matrix_multiplication": "Can explain why we multiply rows by columns",
+      "visualize_transformations": "Can predict how a matrix will transform a shape",
+      "connect_to_ml": "Can explain how linear regression uses matrix operations"
+    }
+  },
+  "next_week_preparation": {
+    "concepts_to_review": [
+      "Eigenvalues and eigenvectors (preview)",
+      "Matrix rank and linear independence",
+      "The relationship between determinant and invertibility"
+    ],
+    "resources_to_bookmark": [
+      "Eigenvectors visualization from Setosa",
+      "Mathematics for ML Chapter 4 (Matrix Decompositions)",
+      "3Blue1Brown's eigenvalue video"
+    ]
+  },
+  "motivation": {
+    "why_this_matters": "Linear algebra is the mathematical foundation of machine learning. Every neural network forward pass, every optimization step, every data transformation uses these concepts. Mastering this week gives you the tools to understand how ML really works under the hood.",
+    "real_world_impact": "The PageRank algorithm that made Google billions is just finding eigenvectors. Netflix's recommendation engine uses matrix factorization. Computer graphics, image processing, and data compression all rely on linear algebra. You're learning the math that powers the digital world.",
+    "career_relevance": "Understanding linear algebra separates ML practitioners who can only use libraries from those who can innovate, debug, and optimize. It's the difference between following recipes and being a chef."
+  }
+}
