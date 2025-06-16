@@ -1,311 +1,486 @@
 /**
- * Neural Learning Web - Backend Server
+ * Neural Odyssey Backend Server - FIXED VERSION
  *
- * Express.js server for personal ML learning companion
- * Single-user local application with SQLite database
- *
- * Features:
- * - Learning progress tracking
- * - Content management and delivery
- * - Quest/challenge system
- * - Vault unlock mechanics
- * - Code execution result storage
- * - Automated database backups
- * - Development-optimized CORS and logging
+ * Now properly reads content files instead of serving mock data
+ * Handles all 4 session types: math, coding, visual_projects, real_applications
+ * Reads content.json, lesson.md, project.md, visualization.py files
  *
  * Author: Neural Explorer
- * Port: 3001 (Frontend on 3000)
  */
 
-const express = require('express')
-const cors = require('cors')
-const helmet = require('helmet')
-const compression = require('compression')
-const morgan = require('morgan')
-const path = require('path')
-const fs = require('fs').promises
-const chalk = require('chalk')
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+const path = require('path');
+const fs = require('fs').promises;
+const chalk = require('chalk');
+const matter = require('gray-matter'); // For parsing markdown frontmatter
 
-// Database and utilities
-const DatabaseManager = require('./config/db')
+// Load environment variables
+require('dotenv').config();
+
+// Import database configuration
+const db = require('./config/db');
 
 // Initialize Express app
-const app = express()
-const PORT = process.env.PORT || 3001
-const NODE_ENV = process.env.NODE_ENV || 'development'
-const isDevelopment = NODE_ENV === 'development'
+const app = express();
 
-// Initialize database
-const db = new DatabaseManager()
+// Configuration
+const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const isDevelopment = NODE_ENV === 'development';
 
-// Security middleware (relaxed for local single-user setup)
+// Trust proxy for accurate IP addresses
+app.set('trust proxy', 1);
+
+// Security Middleware
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disabled for local development
-    crossOriginEmbedderPolicy: false // Allow iframe embedding for Monaco/Pyodide
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        scriptSrc: ["'self'", "'unsafe-eval'", 'https://cdnjs.cloudflare.com'],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://cdnjs.cloudflare.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        workerSrc: ["'self'", 'blob:'],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
   })
-)
+);
 
-// Compression middleware
-app.use(compression())
+// CORS Configuration for local development
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
 
-// CORS configuration for local development
-app.use(
-  cors({
-    origin: [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://0.0.0.0:3000',
-      'http://[::1]:3000'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-  })
-)
+    // Allow localhost development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+
+    // Allow any origin in development
+    if (isDevelopment) {
+      return callback(null, true);
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' })) // Large limit for code submissions
-app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging
+// Compression middleware
+app.use(compression());
+
+// Logging middleware
 if (isDevelopment) {
-  app.use(morgan('dev'))
+  app.use(morgan('dev'));
 } else {
-  app.use(morgan('combined'))
+  app.use(morgan('combined'));
 }
 
-// Request timing middleware
-app.use((req, res, next) => {
-  req.startTime = Date.now()
-  res.on('finish', () => {
-    const duration = Date.now() - req.startTime
-    if (duration > 1000) {
-      // Log slow requests
-      console.log(
-        chalk.yellow(
-          `⚠️  Slow request: ${req.method} ${req.path} took ${duration}ms`
-        )
-      )
-    }
+// Static file serving for content files (with CORS headers)
+app.use(
+  '/content',
+  express.static(path.join(__dirname, '..', 'content'), {
+    setHeaders: (res, path) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    },
   })
-  next()
-})
+);
 
-// Health check endpoint (no authentication needed)
-app.get('/health', async (req, res) => {
+// ==========================================
+// CONTENT READING UTILITIES
+// ==========================================
+
+/**
+ * Get phase name from phase number
+ */
+function getPhaseNames () {
+  return {
+    1: 'foundations',
+    2: 'core-ml',
+    3: 'advanced',
+    4: 'mastery',
+  };
+}
+
+/**
+ * Get week slug from directory structure
+ */
+async function getWeekSlug (phase, week) {
+  const phaseDir = path.join(
+    __dirname,
+    '..',
+    'content',
+    'phases',
+    `phase-${phase}-${getPhaseNames()[phase]}`
+  );
+
   try {
-    const dbStats = await db.getStats()
-    const healthData = {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      database: {
-        connected: dbStats.isConnected,
-        tables: dbStats.tables,
-        dbSize: dbStats.dbSizeMB ? `${dbStats.dbSizeMB}MB` : 'Unknown'
-      },
-      environment: NODE_ENV,
-      version: process.env.npm_package_version || '1.0.0'
+    const dirs = await fs.readdir(phaseDir);
+    const weekDir = dirs.find(dir => dir.startsWith(`week-${week}-`));
+    return weekDir ? weekDir.replace(`week-${week}-`, '') : 'unknown';
+  } catch (error) {
+    console.error(`Error reading phase directory: ${error.message}`);
+    return 'unknown';
+  }
+}
+
+/**
+ * Read and parse content.json file
+ */
+async function readContentJson (contentDir) {
+  try {
+    const contentJsonPath = path.join(contentDir, 'content.json');
+    const contentExists = await fs
+      .access(contentJsonPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (contentExists) {
+      const contentData = await fs.readFile(contentJsonPath, 'utf8');
+      return JSON.parse(contentData);
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error reading content.json: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Read and parse lesson.md file
+ */
+async function readLessonMd (contentDir) {
+  try {
+    const lessonPath = path.join(contentDir, 'lesson.md');
+    const lessonExists = await fs
+      .access(lessonPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (lessonExists) {
+      const lessonContent = await fs.readFile(lessonPath, 'utf8');
+      const parsed = matter(lessonContent);
+      return {
+        frontmatter: parsed.data,
+        content: parsed.content,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error reading lesson.md: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Read project.md file
+ */
+async function readProjectMd (contentDir) {
+  try {
+    const projectPath = path.join(contentDir, 'project.md');
+    const projectExists = await fs
+      .access(projectPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (projectExists) {
+      const projectContent = await fs.readFile(projectPath, 'utf8');
+      const parsed = matter(projectContent);
+      return {
+        frontmatter: parsed.data,
+        content: parsed.content,
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error reading project.md: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Read visualization.py file
+ */
+async function readVisualizationPy (contentDir) {
+  try {
+    const vizPath = path.join(contentDir, 'visualization.py');
+    const vizExists = await fs
+      .access(vizPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (vizExists) {
+      const vizContent = await fs.readFile(vizPath, 'utf8');
+      return {
+        language: 'python',
+        content: vizContent,
+        hasImplementation: !vizContent.includes('TODO') && !vizContent.includes('pass'),
+        functions: extractPythonFunctions(vizContent),
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error reading visualization.py: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Read exercises.py file
+ */
+async function readExercisesPy (contentDir) {
+  try {
+    const exercisesPath = path.join(contentDir, 'exercises.py');
+    const exercisesExists = await fs
+      .access(exercisesPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (exercisesExists) {
+      const exercisesContent = await fs.readFile(exercisesPath, 'utf8');
+      return {
+        language: 'python',
+        content: exercisesContent,
+        hasImplementation: !exercisesContent.includes('TODO'),
+        functions: extractPythonFunctions(exercisesContent),
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error reading exercises.py: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Read resources.json file
+ */
+async function readResourcesJson (contentDir) {
+  try {
+    const resourcesPath = path.join(contentDir, 'resources.json');
+    const resourcesExists = await fs
+      .access(resourcesPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (resourcesExists) {
+      const resourcesContent = await fs.readFile(resourcesPath, 'utf8');
+      return JSON.parse(resourcesContent);
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error reading resources.json: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Extract Python function names from code
+ */
+function extractPythonFunctions (code) {
+  const functionPattern = /def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
+  const functions = [];
+  let match;
+
+  while ((match = functionPattern.exec(code)) !== null) {
+    functions.push(match[1]);
+  }
+
+  return functions;
+}
+
+/**
+ * Main function to read complete week content
+ */
+async function readWeekContent (contentDir, phase, week, progress) {
+  const weekContent = {
+    phase: phase,
+    week: week,
+    title: `Phase ${phase} - Week ${week}`,
+    description: '',
+    progress: progress?.progress_percentage || 0,
+    status: progress?.status || 'not_started',
+    lastAccessed: progress?.last_accessed || null,
+    sessions: {},
+    vault_rewards: [],
+    resources: [],
+    file_structure: {
+      content_json: false,
+      lesson_md: false,
+      project_md: false,
+      visualization_py: false,
+      exercises_py: false,
+      resources_json: false,
+    },
+  };
+
+  try {
+    // Read content.json (session structure)
+    const contentJson = await readContentJson(contentDir);
+    if (contentJson) {
+      weekContent.file_structure.content_json = true;
+      weekContent.title = contentJson.week_metadata?.title || weekContent.title;
+      weekContent.description = contentJson.week_metadata?.description || weekContent.description;
+      weekContent.sessions = contentJson.daily_sessions || {};
+      weekContent.vault_rewards = contentJson.vault_rewards || [];
+      weekContent.learning_objectives = contentJson.week_metadata?.learning_objectives || [];
+      weekContent.estimated_time = contentJson.week_metadata?.estimated_total_time || '6-8 hours';
+      weekContent.difficulty = contentJson.week_metadata?.difficulty_level || 'foundational';
     }
 
-    res.json(healthData)
-  } catch (error) {
-    console.error('Health check failed:', error)
-    res.status(503).json({
-      status: 'unhealthy',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    })
-  }
-})
-
-// API Routes
-
-// User Profile & Progress Routes
-app.get('/api/profile', async (req, res) => {
-  try {
-    const profile = await db.get(`
-      SELECT * FROM user_profile 
-      WHERE id = 1
-    `)
-
-    if (!profile) {
-      // Create default profile for single user
-      await db.run(`
-        INSERT INTO user_profile (id, username) 
-        VALUES (1, 'Neural Explorer')
-      `)
-      return res.json({
-        id: 1,
-        username: 'Neural Explorer',
-        created_at: new Date().toISOString(),
-        current_phase: 1,
-        current_week: 1,
-        total_study_minutes: 0,
-        current_streak_days: 0
-      })
+    // Read lesson.md (math session content)
+    const lessonMd = await readLessonMd(contentDir);
+    if (lessonMd) {
+      weekContent.file_structure.lesson_md = true;
+      if (weekContent.sessions.math) {
+        weekContent.sessions.math.content = lessonMd.content;
+        weekContent.sessions.math.frontmatter = lessonMd.frontmatter;
+      }
     }
 
-    res.json(profile)
-  } catch (error) {
-    console.error('Error fetching profile:', error)
-    res.status(500).json({ error: 'Failed to fetch user profile' })
-  }
-})
-
-app.put('/api/profile', async (req, res) => {
-  try {
-    const { username, timezone, preferred_session_length, daily_goal_minutes } =
-      req.body
-
-    await db.run(
-      `
-      UPDATE user_profile 
-      SET username = ?, timezone = ?, preferred_session_length = ?, 
-          daily_goal_minutes = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = 1
-    `,
-      [username, timezone, preferred_session_length, daily_goal_minutes]
-    )
-
-    const updatedProfile = await db.get(
-      'SELECT * FROM user_profile WHERE id = 1'
-    )
-    res.json(updatedProfile)
-  } catch (error) {
-    console.error('Error updating profile:', error)
-    res.status(500).json({ error: 'Failed to update profile' })
-  }
-})
-
-// Learning Progress Routes
-app.get('/api/learning/progress', async (req, res) => {
-  try {
-    // Get overall progress
-    const profile = await db.get('SELECT * FROM user_profile WHERE id = 1')
-
-    // Get phase progress
-    const phaseProgress = await db.all(`
-      SELECT 
-        phase_number,
-        COUNT(*) as total_weeks,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_weeks,
-        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_weeks
-      FROM learning_progress 
-      GROUP BY phase_number
-      ORDER BY phase_number
-    `)
-
-    // Get recent activity
-    const recentActivity = await db.all(`
-      SELECT * FROM daily_sessions 
-      ORDER BY session_date DESC 
-      LIMIT 7
-    `)
-
-    // Calculate streak
-    const today = new Date().toISOString().split('T')[0]
-    const yesterdayActivity = await db.get(`
-      SELECT COUNT(*) as count FROM daily_sessions 
-      WHERE session_date = date('now', '-1 day')
-    `)
-
-    res.json({
-      profile,
-      phases: phaseProgress,
-      recentActivity,
-      streakActive: yesterdayActivity?.count > 0,
-      currentDate: today
-    })
-  } catch (error) {
-    console.error('Error fetching learning progress:', error)
-    res.status(500).json({ error: 'Failed to fetch learning progress' })
-  }
-})
-
-app.post('/api/learning/session', async (req, res) => {
-  try {
-    const { session_type, duration_minutes, focus_score, phase, week } =
-      req.body
-
-    // Record session
-    await db.run(
-      `
-      INSERT INTO daily_sessions (session_date, session_type, duration_minutes, focus_score)
-      VALUES (date('now'), ?, ?, ?)
-    `,
-      [session_type, duration_minutes, focus_score]
-    )
-
-    // Update progress if provided
-    if (phase && week) {
-      await db.run(
-        `
-        INSERT OR REPLACE INTO learning_progress 
-        (phase_number, week_number, status, progress_percentage, last_accessed, updated_at)
-        VALUES (?, ?, 'in_progress', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `,
-        [phase, week, Math.min(100, (duration_minutes / 60) * 25)]
-      ) // Rough progress calculation
+    // Read project.md (visual_projects and real_applications content)
+    const projectMd = await readProjectMd(contentDir);
+    if (projectMd) {
+      weekContent.file_structure.project_md = true;
+      if (weekContent.sessions.visual_projects) {
+        weekContent.sessions.visual_projects.project_content = projectMd.content;
+        weekContent.sessions.visual_projects.project_frontmatter = projectMd.frontmatter;
+      }
+      if (weekContent.sessions.real_applications) {
+        weekContent.sessions.real_applications.project_content = projectMd.content;
+        weekContent.sessions.real_applications.project_frontmatter = projectMd.frontmatter;
+      }
     }
 
-    // Update user profile stats
-    await db.run(
-      `
-      UPDATE user_profile 
-      SET total_study_minutes = total_study_minutes + ?,
-          last_activity = CURRENT_TIMESTAMP,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = 1
-    `,
-      [duration_minutes]
-    )
+    // Read visualization.py (visual_projects executable content)
+    const visualizationPy = await readVisualizationPy(contentDir);
+    if (visualizationPy) {
+      weekContent.file_structure.visualization_py = true;
+      if (weekContent.sessions.visual_projects) {
+        weekContent.sessions.visual_projects.code = visualizationPy;
+      }
+    }
 
-    res.json({ success: true, message: 'Session recorded successfully' })
+    // Read exercises.py (coding session content)
+    const exercisesPy = await readExercisesPy(contentDir);
+    if (exercisesPy) {
+      weekContent.file_structure.exercises_py = true;
+      if (weekContent.sessions.coding) {
+        weekContent.sessions.coding.code = exercisesPy;
+      }
+    }
+
+    // Read resources.json
+    const resourcesJson = await readResourcesJson(contentDir);
+    if (resourcesJson) {
+      weekContent.file_structure.resources_json = true;
+      weekContent.resources = resourcesJson;
+    }
+
+    // Generate session availability based on file structure
+    weekContent.session_availability = {
+      math: weekContent.file_structure.lesson_md,
+      coding: weekContent.file_structure.exercises_py,
+      visual_projects:
+        weekContent.file_structure.visualization_py && weekContent.file_structure.project_md,
+      real_applications: weekContent.file_structure.project_md,
+    };
   } catch (error) {
-    console.error('Error recording session:', error)
-    res.status(500).json({ error: 'Failed to record session' })
+    console.error(`Error reading content from ${contentDir}:`, error.message);
   }
-})
 
-// Content Routes
+  return weekContent;
+}
+
+// ==========================================
+// API ROUTES
+// ==========================================
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: NODE_ENV,
+    version: '1.0.0',
+  });
+});
+
+// Basic API info
+app.get('/api', (req, res) => {
+  res.json({
+    name: 'Neural Odyssey API',
+    version: '1.0.0',
+    environment: NODE_ENV,
+    endpoints: {
+      health: '/health',
+      content: '/api/content/*',
+      progress: '/api/progress/*',
+      vault: '/api/vault/*',
+      sessions: '/api/sessions/*',
+    },
+  });
+});
+
+// ==========================================
+// CONTENT ROUTES - COMPLETELY REWRITTEN
+// ==========================================
+
+// Get all phases overview
 app.get('/api/content/phases', async (req, res) => {
   try {
-    // Get all phases with progress
-    const phases = await db.all(`
-      SELECT 
-        p.phase_number,
-        p.week_number,
-        p.status,
-        p.progress_percentage,
-        p.last_accessed,
-        CASE 
-          WHEN p.status = 'completed' THEN 'completed'
-          WHEN p.status = 'in_progress' THEN 'active' 
-          WHEN p.phase_number = 1 AND p.week_number = 1 THEN 'available'
-          WHEN EXISTS(
-            SELECT 1 FROM learning_progress p2 
-            WHERE p2.phase_number = p.phase_number - 1 
-            AND p2.status = 'completed'
-          ) THEN 'available'
-          ELSE 'locked'
-        END as availability
-      FROM learning_progress p
-      ORDER BY p.phase_number, p.week_number
-    `)
+    // Get progress data for all phases
+    const progressData = await db.all(`
+            SELECT 
+                phase_number,
+                week_number,
+                status,
+                progress_percentage,
+                last_accessed
+            FROM learning_progress
+            ORDER BY phase_number, week_number
+        `);
 
-    // Group by phases
-    const phaseMap = {}
-    phases.forEach(item => {
+    // Group progress by phases
+    const phaseMap = {};
+    progressData.forEach(item => {
       if (!phaseMap[item.phase_number]) {
         phaseMap[item.phase_number] = {
           phase: item.phase_number,
           weeks: [],
           totalWeeks: 0,
-          completedWeeks: 0
-        }
+          completedWeeks: 0,
+          totalProgress: 0,
+        };
       }
 
       phaseMap[item.phase_number].weeks.push({
@@ -313,314 +488,423 @@ app.get('/api/content/phases', async (req, res) => {
         status: item.status,
         progress: item.progress_percentage,
         lastAccessed: item.last_accessed,
-        availability: item.availability
-      })
+      });
 
-      phaseMap[item.phase_number].totalWeeks++
+      phaseMap[item.phase_number].totalWeeks++;
       if (item.status === 'completed') {
-        phaseMap[item.phase_number].completedWeeks++
+        phaseMap[item.phase_number].completedWeeks++;
       }
-    })
+      phaseMap[item.phase_number].totalProgress += item.progress_percentage || 0;
+    });
 
-    res.json(Object.values(phaseMap))
-  } catch (error) {
-    console.error('Error fetching content phases:', error)
-    res.status(500).json({ error: 'Failed to fetch content phases' })
-  }
-})
+    // Calculate average progress for each phase
+    Object.values(phaseMap).forEach(phase => {
+      phase.averageProgress = phase.totalWeeks > 0 ? phase.totalProgress / phase.totalWeeks : 0;
+    });
 
-app.get('/api/content/phase/:phase/week/:week', async (req, res) => {
-  try {
-    const { phase, week } = req.params
-
-    // Get week progress
-    const progress = await db.get(
-      `
-      SELECT * FROM learning_progress 
-      WHERE phase_number = ? AND week_number = ?
-    `,
-      [phase, week]
-    )
-
-    // For now, return mock content structure
-    // In a complete implementation, this would read from content files
-    const weekContent = {
-      phase: parseInt(phase),
-      week: parseInt(week),
-      title: `Phase ${phase} - Week ${week}`,
-      description: `Learning content for Phase ${phase}, Week ${week}`,
-      progress: progress?.progress_percentage || 0,
-      status: progress?.status || 'not_started',
-      lessons: [
-        {
-          id: `${phase}-${week}-1`,
-          title: 'Theoretical Foundation',
-          type: 'theory',
-          duration: 45,
-          completed: progress?.status === 'completed'
-        },
-        {
-          id: `${phase}-${week}-2`,
-          title: 'Practical Implementation',
-          type: 'coding',
-          duration: 60,
-          completed: progress?.status === 'completed'
-        },
-        {
-          id: `${phase}-${week}-3`,
-          title: 'Visual Project',
-          type: 'visualization',
-          duration: 30,
-          completed: progress?.status === 'completed'
-        }
-      ],
-      resources: [
-        { type: 'pdf', title: 'Reading Material', url: '#' },
-        { type: 'video', title: 'Tutorial Video', url: '#' },
-        { type: 'code', title: 'Code Examples', url: '#' }
-      ]
-    }
-
-    // Update last accessed
-    await db.run(
-      `
-      INSERT OR REPLACE INTO learning_progress 
-      (phase_number, week_number, status, progress_percentage, last_accessed, updated_at)
-      VALUES (?, ?, COALESCE(?, 'not_started'), COALESCE(?, 0), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `,
-      [phase, week, progress?.status, progress?.progress_percentage]
-    )
-
-    res.json(weekContent)
-  } catch (error) {
-    console.error('Error fetching week content:', error)
-    res.status(500).json({ error: 'Failed to fetch week content' })
-  }
-})
-
-// Quest Routes
-app.get('/api/quests', async (req, res) => {
-  try {
-    const quests = await db.all(`
-      SELECT * FROM quests 
-      ORDER BY created_at DESC
-    `)
-
-    res.json(quests || [])
-  } catch (error) {
-    console.error('Error fetching quests:', error)
-    res.status(500).json({ error: 'Failed to fetch quests' })
-  }
-})
-
-app.post('/api/quests/:questId/complete', async (req, res) => {
-  try {
-    const { questId } = req.params
-    const { code_submission, result } = req.body
-
-    await db.run(
-      `
-      UPDATE quests 
-      SET status = 'completed', 
-          completion_date = CURRENT_TIMESTAMP,
-          code_submission = ?,
-          result_data = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `,
-      [code_submission, JSON.stringify(result), questId]
-    )
-
-    // Award experience points
-    await db.run(`
-      UPDATE user_profile 
-      SET experience_points = experience_points + 100,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = 1
-    `)
-
-    res.json({ success: true, message: 'Quest completed successfully' })
-  } catch (error) {
-    console.error('Error completing quest:', error)
-    res.status(500).json({ error: 'Failed to complete quest' })
-  }
-})
-
-// Vault Routes
-app.get('/api/vault', async (req, res) => {
-  try {
-    const vaultItems = await db.all(`
-      SELECT * FROM vault_items 
-      ORDER BY unlock_requirement_type, created_at
-    `)
-
-    res.json(vaultItems || [])
-  } catch (error) {
-    console.error('Error fetching vault items:', error)
-    res.status(500).json({ error: 'Failed to fetch vault items' })
-  }
-})
-
-app.post('/api/vault/:itemId/unlock', async (req, res) => {
-  try {
-    const { itemId } = req.params
-
-    await db.run(
-      `
-      UPDATE vault_items 
-      SET unlocked = 1, 
-          unlocked_at = CURRENT_TIMESTAMP,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `,
-      [itemId]
-    )
-
-    res.json({ success: true, message: 'Vault item unlocked successfully' })
-  } catch (error) {
-    console.error('Error unlocking vault item:', error)
-    res.status(500).json({ error: 'Failed to unlock vault item' })
-  }
-})
-
-// Code Execution Results Storage
-app.post('/api/code/save', async (req, res) => {
-  try {
-    const { lesson_id, code, result, execution_time } = req.body
-
-    await db.run(
-      `
-      INSERT OR REPLACE INTO code_submissions 
-      (lesson_id, code, result, execution_time, created_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `,
-      [lesson_id, code, JSON.stringify(result), execution_time]
-    )
-
-    res.json({ success: true, message: 'Code execution saved' })
-  } catch (error) {
-    console.error('Error saving code execution:', error)
-    res.status(500).json({ error: 'Failed to save code execution' })
-  }
-})
-
-// Database Management Routes
-app.get('/api/admin/database/stats', async (req, res) => {
-  try {
-    const stats = await db.getStats()
-    res.json(stats)
-  } catch (error) {
-    console.error('Error fetching database stats:', error)
-    res.status(500).json({ error: 'Failed to fetch database stats' })
-  }
-})
-
-app.post('/api/admin/database/backup', async (req, res) => {
-  try {
-    const backupPath = await db.backup()
     res.json({
       success: true,
-      message: 'Database backup created successfully',
-      backupPath
-    })
+      data: Object.values(phaseMap),
+    });
   } catch (error) {
-    console.error('Error creating backup:', error)
-    res.status(500).json({ error: 'Failed to create database backup' })
+    console.error('Error fetching phases:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch phases',
+      details: error.message,
+    });
   }
-})
+});
 
-// Error handling middleware
+// Get specific week content - COMPLETELY REWRITTEN
+app.get('/api/content/phase/:phase/week/:week', async (req, res) => {
+  try {
+    const { phase, week } = req.params;
+    const phaseNumber = parseInt(phase);
+    const weekNumber = parseInt(week);
+
+    // Validate parameters
+    if (
+      isNaN(phaseNumber) ||
+      isNaN(weekNumber) ||
+      phaseNumber < 1 ||
+      phaseNumber > 4 ||
+      weekNumber < 1
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid phase or week number',
+      });
+    }
+
+    // Get week progress from database
+    const progress = await db.get(
+      `SELECT * FROM learning_progress WHERE phase_number = ? AND week_number = ?`,
+      [phaseNumber, weekNumber]
+    );
+
+    // Construct content directory path
+    const phaseNames = getPhaseNames();
+    const weekSlug = await getWeekSlug(phaseNumber, weekNumber);
+    const contentDir = path.join(
+      __dirname,
+      '..',
+      'content',
+      'phases',
+      `phase-${phaseNumber}-${phaseNames[phaseNumber]}`,
+      `week-${weekNumber}-${weekSlug}`
+    );
+
+    // Read actual content files
+    const weekContent = await readWeekContent(contentDir, phaseNumber, weekNumber, progress);
+
+    // Update last accessed in database
+    await db.run(
+      `INSERT OR REPLACE INTO learning_progress 
+             (phase_number, week_number, status, progress_percentage, last_accessed, updated_at)
+             VALUES (?, ?, COALESCE(?, 'not_started'), COALESCE(?, 0), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      [phaseNumber, weekNumber, progress?.status, progress?.progress_percentage]
+    );
+
+    res.json({
+      success: true,
+      data: weekContent,
+    });
+  } catch (error) {
+    console.error('Error fetching week content:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch week content',
+      details: error.message,
+    });
+  }
+});
+
+// Get specific session content
+app.get('/api/content/phase/:phase/week/:week/session/:sessionType', async (req, res) => {
+  try {
+    const { phase, week, sessionType } = req.params;
+    const phaseNumber = parseInt(phase);
+    const weekNumber = parseInt(week);
+
+    // Validate session type
+    const validSessionTypes = ['math', 'coding', 'visual_projects', 'real_applications'];
+    if (!validSessionTypes.includes(sessionType)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid session type',
+      });
+    }
+
+    // Get week content
+    const phaseNames = getPhaseNames();
+    const weekSlug = await getWeekSlug(phaseNumber, weekNumber);
+    const contentDir = path.join(
+      __dirname,
+      '..',
+      'content',
+      'phases',
+      `phase-${phaseNumber}-${phaseNames[phaseNumber]}`,
+      `week-${weekNumber}-${weekSlug}`
+    );
+
+    const progress = await db.get(
+      `SELECT * FROM learning_progress WHERE phase_number = ? AND week_number = ?`,
+      [phaseNumber, weekNumber]
+    );
+
+    const weekContent = await readWeekContent(contentDir, phaseNumber, weekNumber, progress);
+
+    // Extract specific session data
+    const sessionData = weekContent.sessions[sessionType] || null;
+
+    if (!sessionData) {
+      return res.status(404).json({
+        success: false,
+        error: `Session type '${sessionType}' not available for this week`,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        session_type: sessionType,
+        week_info: {
+          phase: phaseNumber,
+          week: weekNumber,
+          title: weekContent.title,
+          description: weekContent.description,
+        },
+        session_data: sessionData,
+        availability: weekContent.session_availability[sessionType] || false,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching session content:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch session content',
+      details: error.message,
+    });
+  }
+});
+
+// ==========================================
+// PROGRESS TRACKING ROUTES
+// ==========================================
+
+// Update session progress
+app.post('/api/progress/session', async (req, res) => {
+  try {
+    const {
+      phase,
+      week,
+      session_type,
+      duration_minutes,
+      focus_score,
+      completion_percentage,
+      notes,
+    } = req.body;
+
+    // Validate required fields
+    if (!phase || !week || !session_type || duration_minutes === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: phase, week, session_type, duration_minutes',
+      });
+    }
+
+    // Record daily session
+    const today = new Date().toISOString().split('T')[0];
+    await db.run(
+      `INSERT INTO daily_sessions 
+             (session_date, session_type, duration_minutes, focus_score, phase, week, notes, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      [today, session_type, duration_minutes, focus_score || 8, phase, week, notes || null]
+    );
+
+    // Update learning progress
+    const currentProgress = await db.get(
+      `SELECT * FROM learning_progress WHERE phase_number = ? AND week_number = ?`,
+      [phase, week]
+    );
+
+    const newProgress = Math.min(
+      100,
+      (currentProgress?.progress_percentage || 0) + (completion_percentage || 25)
+    );
+    const newStatus =
+      newProgress >= 100 ? 'completed' : newProgress > 0 ? 'in_progress' : 'not_started';
+
+    await db.run(
+      `INSERT OR REPLACE INTO learning_progress 
+             (phase_number, week_number, status, progress_percentage, last_accessed, updated_at)
+             VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      [phase, week, newStatus, newProgress]
+    );
+
+    res.json({
+      success: true,
+      message: 'Session progress recorded successfully',
+      data: {
+        new_progress: newProgress,
+        new_status: newStatus,
+      },
+    });
+  } catch (error) {
+    console.error('Error recording session progress:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to record session progress',
+      details: error.message,
+    });
+  }
+});
+
+// Get user progress summary
+app.get('/api/progress/summary', async (req, res) => {
+  try {
+    // Get overall progress
+    const progressSummary = await db.all(`
+            SELECT 
+                phase_number,
+                week_number,
+                status,
+                progress_percentage,
+                last_accessed
+            FROM learning_progress
+            ORDER BY phase_number, week_number
+        `);
+
+    // Get recent sessions
+    const recentSessions = await db.all(`
+            SELECT 
+                session_date,
+                session_type,
+                duration_minutes,
+                focus_score,
+                phase,
+                week
+            FROM daily_sessions
+            ORDER BY created_at DESC
+            LIMIT 10
+        `);
+
+    // Calculate statistics
+    const totalWeeks = progressSummary.length;
+    const completedWeeks = progressSummary.filter(p => p.status === 'completed').length;
+    const totalProgress = progressSummary.reduce((sum, p) => sum + (p.progress_percentage || 0), 0);
+    const averageProgress = totalWeeks > 0 ? totalProgress / totalWeeks : 0;
+
+    res.json({
+      success: true,
+      data: {
+        overall_stats: {
+          total_weeks: totalWeeks,
+          completed_weeks: completedWeeks,
+          average_progress: averageProgress,
+          completion_rate: totalWeeks > 0 ? (completedWeeks / totalWeeks) * 100 : 0,
+        },
+        progress_by_week: progressSummary,
+        recent_sessions: recentSessions,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching progress summary:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch progress summary',
+      details: error.message,
+    });
+  }
+});
+
+// ==========================================
+// VAULT ROUTES
+// ==========================================
+
+// Get vault items (placeholder for now)
+app.get('/api/vault', async (req, res) => {
+  try {
+    // For now, return empty vault - this would be enhanced later
+    res.json({
+      success: true,
+      data: {
+        total_items: 0,
+        unlocked_items: 0,
+        categories: {
+          secret_archives: [],
+          controversy_files: [],
+          beautiful_mind: [],
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching vault:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch vault items',
+      details: error.message,
+    });
+  }
+});
+
+// ==========================================
+// ERROR HANDLING
+// ==========================================
+
+// Global error handler
 app.use((err, req, res, next) => {
-  console.error(chalk.red('❌ Server Error:'), err)
+  console.error(chalk.red('❌ Server Error:'), err);
 
-  // Don't leak error details in production
-  const errorMessage = isDevelopment ? err.message : 'Internal server error'
-  const errorStack = isDevelopment ? err.stack : undefined
+  const errorMessage = isDevelopment ? err.message : 'Internal server error';
+  const errorStack = isDevelopment ? err.stack : undefined;
 
   res.status(err.status || 500).json({
+    success: false,
     error: errorMessage,
     stack: errorStack,
     timestamp: new Date().toISOString(),
-    path: req.path
-  })
-})
+    path: req.path,
+  });
+});
 
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
+    success: false,
     error: 'Not Found',
     message: `Route ${req.method} ${req.path} not found`,
-    timestamp: new Date().toISOString()
-  })
-})
+    timestamp: new Date().toISOString(),
+  });
+});
 
-// Initialize database and start server
+// ==========================================
+// SERVER STARTUP
+// ==========================================
+
 async function startServer () {
   try {
-    console.log(chalk.blue('🔗 Connecting to database...'))
-    await db.connect()
+    console.log(chalk.blue('🔗 Connecting to database...'));
+    await db.connect();
 
-    console.log(chalk.blue('🔨 Initializing database schema...'))
-    await db.initializeSchema()
+    console.log(chalk.blue('🔨 Initializing database schema...'));
+    await db.initializeSchema();
 
     const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(
-        chalk.green('\n🚀 Neural Learning Web Backend Server Started!')
-      )
-      console.log(
-        chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      )
-      console.log(chalk.cyan(`   🌐 Server: http://localhost:${PORT}`))
-      console.log(chalk.cyan(`   🔗 Health: http://localhost:${PORT}/health`))
-      console.log(chalk.cyan(`   📊 API: http://localhost:${PORT}/api`))
-      console.log(
-        chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      )
-      console.log(chalk.gray(`   Environment: ${NODE_ENV}`))
-      console.log(chalk.gray(`   Database: SQLite (${db.path})`))
-      console.log(chalk.gray('   Single-user mode: No authentication required'))
-      console.log(chalk.gray('   CORS: Enabled for frontend development'))
-      console.log(chalk.gray('   Ready for frontend connection on port 3000\n'))
-    })
+      console.log(chalk.green('\n🚀 Neural Learning Web Backend Server Started!'));
+      console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
+      console.log(chalk.cyan(`   🌐 Server: http://localhost:${PORT}`));
+      console.log(chalk.cyan(`   🔗 Health: http://localhost:${PORT}/health`));
+      console.log(chalk.cyan(`   📊 API: http://localhost:${PORT}/api`));
+      console.log(chalk.cyan(`   📁 Content: http://localhost:${PORT}/api/content/phases`));
+      console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
+      console.log(chalk.gray(`   Environment: ${NODE_ENV}`));
+      console.log(chalk.gray(`   Database: SQLite`));
+      console.log(chalk.gray('   Content: Reading from /content/phases/ directory'));
+      console.log(chalk.gray('   Sessions: math, coding, visual_projects, real_applications'));
+      console.log(chalk.gray('   Files: content.json, lesson.md, project.md, visualization.py'));
+      console.log(chalk.gray('   CORS: Enabled for frontend development\n'));
+    });
 
     // Graceful shutdown
-    process.on('SIGTERM', () => gracefulShutdown(server))
-    process.on('SIGINT', () => gracefulShutdown(server))
+    process.on('SIGTERM', () => gracefulShutdown(server));
+    process.on('SIGINT', () => gracefulShutdown(server));
 
-    return server
+    return server;
   } catch (error) {
-    console.error(chalk.red('❌ Failed to start server:'), error)
-    process.exit(1)
+    console.error(chalk.red('❌ Failed to start server:'), error);
+    process.exit(1);
   }
 }
 
 async function gracefulShutdown (server) {
-  console.log(chalk.yellow('\n🛑 Graceful shutdown initiated...'))
+  console.log(chalk.yellow('\n🛑 Graceful shutdown initiated...'));
 
   server.close(async () => {
-    console.log(chalk.blue('📴 HTTP server closed'))
+    console.log(chalk.blue('📴 HTTP server closed'));
 
     try {
-      await db.close()
-      console.log(chalk.blue('🗄️  Database connection closed'))
+      await db.close();
+      console.log(chalk.blue('🗄️  Database connection closed'));
     } catch (error) {
-      console.error(chalk.red('❌ Error closing database:'), error)
+      console.error(chalk.red('❌ Error closing database:'), error);
     }
 
-    console.log(chalk.green('✅ Graceful shutdown complete'))
-    process.exit(0)
-  })
+    console.log(chalk.green('✅ Graceful shutdown complete'));
+    process.exit(0);
+  });
 
   // Force close after 10 seconds
   setTimeout(() => {
-    console.log(chalk.red('⚠️  Forced shutdown after timeout'))
-    process.exit(1)
-  }, 10000)
+    console.log(chalk.red('⚠️  Forced shutdown after timeout'));
+    process.exit(1);
+  }, 10000);
 }
 
 // Start the server
 if (require.main === module) {
-  startServer()
+  startServer();
 }
 
-module.exports = { app, startServer }
+module.exports = { app, startServer };

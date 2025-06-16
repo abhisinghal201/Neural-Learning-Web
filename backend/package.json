@@ -1,110 +1,109 @@
 {
-  "name": "neural-odyssey-backend",
+  "name": "neural-learning-web-backend",
   "version": "1.0.0",
-  "description": "Backend API for Neural Odyssey - Personal ML Learning Companion",
-  "main": "app.js",
+  "description": "Backend API server for Neural Learning Web - Personal Machine Learning Learning Companion",
+  "main": "Server.js",
+  "type": "commonjs",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
-    "init-db": "node ../scripts/init-db.js",
-    "export-portfolio": "node ../scripts/export-portfolio.js",
-    "backup": "node ../scripts/backup-db.js",
+    "start": "node Server.js",
+    "dev": "nodemon Server.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "init-db": "node scripts/init-db.js",
+    "backup-db": "node scripts/backup-db.js"
   },
   "keywords": [
     "machine-learning",
     "education",
+    "api",
+    "express",
+    "sqlite",
     "personal-learning",
-    "gamification",
-    "neural-networks",
-    "ai-education"
+    "neural-networks"
   ],
-  "author": "Neural Explorer",
+  "author": {
+    "name": "Neural Explorer",
+    "email": "explorer@neural-odyssey.local"
+  },
   "license": "MIT",
-  "dependencies": {
-    "express": "^4.18.2",
-    "sqlite3": "^5.1.6",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
-    "morgan": "^1.10.0",
-    "compression": "^1.7.4",
-    "express-rate-limit": "^6.10.0",
-    "express-validator": "^7.0.1",
-    "multer": "^1.4.5-lts.1",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.3.1",
-    "uuid": "^9.0.1",
-    "moment": "^2.29.4",
-    "lodash": "^4.17.21",
-    "chalk": "^4.1.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1",
-    "jest": "^29.7.0",
-    "supertest": "^6.3.3",
-    "eslint": "^8.50.0",
-    "eslint-config-node": "^4.1.0",
-    "eslint-plugin-node": "^11.1.0"
-  },
   "engines": {
-    "node": ">=16.0.0",
+    "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/abhisinghal21/neural-odyssey.git"
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "compression": "^1.7.4",
+    "express-rate-limit": "^6.7.0",
+    "express-validator": "^7.0.1",
+    "sqlite3": "^5.1.6",
+    "chalk": "^4.1.2",
+    "dotenv": "^16.1.4",
+    "gray-matter": "^4.0.3",
+    "moment": "^2.29.4",
+    "uuid": "^9.0.0",
+    "bcrypt": "^5.1.0",
+    "jsonwebtoken": "^9.0.0"
   },
-  "bugs": {
-    "url": "https://github.com/abhisinghal21/neural-odyssey/issues"
-  },
-  "homepage": "https://github.com/abhisinghal21/neural-odyssey#readme",
-  "jest": {
-    "testEnvironment": "node",
-    "collectCoverageFrom": [
-      "**/*.js",
-      "!**/node_modules/**",
-      "!**/coverage/**"
-    ],
-    "testMatch": [
-      "**/__tests__/**/*.js",
-      "**/?(*.)+(spec|test).js"
-    ]
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3",
+    "eslint": "^8.42.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "prettier": "^2.8.8"
   },
   "eslintConfig": {
-    "extends": ["eslint:recommended", "node"],
+    "extends": [
+      "standard"
+    ],
     "env": {
       "node": true,
-      "es2021": true,
-      "jest": true
-    },
-    "parserOptions": {
-      "ecmaVersion": 12,
-      "sourceType": "module"
+      "jest": true,
+      "es2022": true
     },
     "rules": {
       "no-console": "off",
-      "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-      "prefer-const": "error",
-      "no-var": "error"
+      "space-before-function-paren": ["error", "always"]
     }
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "none"
   },
   "nodemonConfig": {
     "watch": [
       "."
     ],
-    "ext": "js,json",
     "ignore": [
-      "node_modules/",
-      "../data/",
-      "../exports/",
-      "*.test.js"
+      "node_modules",
+      "*.test.js",
+      "coverage",
+      "../content"
     ],
-    "env": {
-      "NODE_ENV": "development"
-    }
+    "ext": "js,json",
+    "exec": "node Server.js"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!node_modules/**",
+      "!coverage/**",
+      "!scripts/**"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.js",
+      "**/*.test.js"
+    ]
   }
 }
