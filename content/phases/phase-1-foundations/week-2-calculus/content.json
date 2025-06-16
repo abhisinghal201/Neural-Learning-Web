@@ -1,0 +1,406 @@
+{
+  "week_metadata": {
+    "phase": 1,
+    "week": 2,
+    "title": "Calculus - The Engine of Learning",
+    "subtitle": "Master the mathematical force that enables machines to learn and improve",
+    "description": "Discover how derivatives and optimization power every AI system. From neural network training to Google's search algorithm improvements, calculus is the mathematical engine that enables machines to learn from experience and get better over time.",
+    "learning_objectives": [
+      "Understand derivatives as rates of change and slopes of functions",
+      "Master gradient descent as the fundamental learning algorithm",
+      "Visualize optimization landscapes and convergence behavior",
+      "Apply chain rule concepts that enable backpropagation",
+      "Connect calculus to neural network training and AI optimization"
+    ],
+    "prerequisites": [
+      "Week 1: Linear algebra foundations",
+      "Understanding of functions and graphs",
+      "Geometric intuition from matrix transformations"
+    ],
+    "estimated_total_time": "6-8 hours across 7 days",
+    "difficulty_level": "foundational_to_intermediate",
+    "historical_context": "Calculus was invented by Newton and Leibniz in the 1600s to understand motion and change. Today, it's the mathematical engine behind every learning algorithm - from simple linear regression to GPT models.",
+    "motivation": "Every time an AI system gets better at recognizing images, translating languages, or playing games, calculus is the mathematical force making it happen. Master this and you understand how machines learn."
+  },
+  
+  "daily_sessions": {
+    "math": {
+      "session_type": "math",
+      "title": "Mathematical Deep Dive",
+      "icon": "trending-up",
+      "duration_minutes": 25,
+      "content_file": "lesson.md",
+      "focus": "Derivatives, gradients, and optimization theory",
+      "description": "Build deep understanding of calculus concepts that power machine learning",
+      "learning_outcomes": [
+        "Master derivative concepts and geometric interpretation",
+        "Understand multivariable calculus and gradients",
+        "Grasp optimization theory and convergence conditions",
+        "Connect calculus to machine learning algorithms"
+      ],
+      "key_concepts": [
+        "Derivatives as instantaneous rates of change",
+        "Gradients as vectors pointing uphill",
+        "Chain rule for composite functions",
+        "Optimization landscapes and critical points"
+      ],
+      "mathematical_connections": [
+        "Derivatives extend linear algebra transformations",
+        "Gradients combine vectors with rates of change",
+        "Optimization builds on eigenvalue/eigenvector concepts",
+        "Chain rule enables deep network training"
+      ],
+      "assessment_criteria": [
+        "Can compute and interpret derivatives geometrically",
+        "Understands gradient descent convergence conditions",
+        "Explains chain rule in context of nested functions",
+        "Connects calculus concepts to ML algorithms"
+      ]
+    },
+    
+    "coding": {
+      "session_type": "coding",
+      "title": "Implementation Practice",
+      "icon": "code",
+      "duration_minutes": 25,
+      "content_file": "exercises.py",
+      "focus": "Numerical methods and optimization algorithms",
+      "description": "Implement calculus concepts computationally and build optimization algorithms",
+      "learning_outcomes": [
+        "Implement numerical differentiation methods",
+        "Build gradient descent optimization from scratch",
+        "Create multivariable optimization functions",
+        "Develop backpropagation algorithm foundations"
+      ],
+      "key_concepts": [
+        "Finite difference approximations",
+        "Gradient descent implementation",
+        "Learning rate optimization",
+        "Convergence detection algorithms"
+      ],
+      "programming_skills": [
+        "Numerical computation with precision",
+        "Iterative optimization algorithms",
+        "Function composition and closures",
+        "Performance optimization techniques"
+      ],
+      "algorithmic_complexity": [
+        "O(n) for gradient computation",
+        "O(k*n) for k-step optimization",
+        "Memory efficiency for large datasets",
+        "Numerical stability considerations"
+      ],
+      "assessment_criteria": [
+        "Gradient descent converges to correct solutions",
+        "Numerical derivatives match analytical ones",
+        "Code handles edge cases (flat regions, saddle points)",
+        "Implementation is efficient and numerically stable"
+      ]
+    },
+    
+    "visual_projects": {
+      "session_type": "visual_projects",
+      "title": "Optimization Visualizations",
+      "icon": "eye",
+      "duration_minutes": 25,
+      "content_file": "visualization.py",
+      "project_file": "project.md",
+      "focus": "Interactive exploration of optimization landscapes",
+      "description": "Visualize how gradient descent navigates loss landscapes and tune optimization parameters",
+      "learning_outcomes": [
+        "Visualize gradient descent paths on different functions",
+        "Explore learning rate effects on convergence",
+        "Understand momentum and adaptive optimization",
+        "See multivariable optimization in 3D landscapes"
+      ],
+      "key_concepts": [
+        "Loss landscape visualization",
+        "Gradient vector field exploration",
+        "Learning rate sensitivity analysis",
+        "Momentum and acceleration effects"
+      ],
+      "tools_used": [
+        "3D surface plots for loss landscapes",
+        "Vector fields for gradient visualization",
+        "Animation for optimization trajectories",
+        "Interactive parameter tuning"
+      ],
+      "visual_elements": [
+        "Real-time gradient descent animation",
+        "Learning rate effect comparison",
+        "Saddle point and local minima exploration",
+        "Momentum trajectory visualization"
+      ],
+      "assessment_criteria": [
+        "Can predict optimization behavior from landscape shape",
+        "Understands learning rate vs convergence trade-offs",
+        "Identifies problematic landscape features",
+        "Connects visual patterns to algorithmic behavior"
+      ]
+    },
+    
+    "real_applications": {
+      "session_type": "real_applications",
+      "title": "AI Training Systems",
+      "icon": "target",
+      "duration_minutes": 25,
+      "project_file": "project.md",
+      "focus": "Neural network training and real optimization problems",
+      "description": "Apply calculus to train neural networks and understand how AI systems improve",
+      "learning_outcomes": [
+        "Implement simple neural network training",
+        "Understand backpropagation as chain rule application",
+        "Apply optimization to business problems",
+        "See calculus in production AI systems"
+      ],
+      "key_concepts": [
+        "Neural network forward/backward propagation",
+        "Loss function optimization in practice",
+        "Hyperparameter tuning strategies",
+        "Production optimization systems"
+      ],
+      "real_world_connections": [
+        "Netflix recommendation optimization",
+        "Google search ranking improvements",
+        "Tesla autopilot neural network training",
+        "Financial algorithmic trading systems"
+      ],
+      "business_impact": [
+        "Netflix: $1B saved through recommendation optimization",
+        "Google: Billions in ad revenue from search improvements",
+        "Tesla: Autonomous driving through neural optimization",
+        "Finance: Trillions managed by algorithmic systems"
+      ],
+      "industry_applications": [
+        "Deep learning model training",
+        "Financial portfolio optimization",
+        "Supply chain optimization",
+        "A/B testing and conversion optimization"
+      ],
+      "assessment_criteria": [
+        "Can explain how neural networks learn using calculus",
+        "Understands business value of optimization",
+        "Implements working optimization for real problems",
+        "Connects mathematical concepts to industry applications"
+      ]
+    }
+  },
+  
+  "vault_rewards": [
+    {
+      "vault_item_id": "sa_002_newton_leibniz_feud",
+      "category": "secret_archives",
+      "unlock_condition": {
+        "type": "session_complete",
+        "session_type": "math",
+        "minimum_score": 0.8,
+        "bonus_condition": "chain_rule_mastery"
+      },
+      "title": "The Calculus War That Delayed AI by 200 Years",
+      "preview": "How Newton and Leibniz's bitter feud over calculus credit nearly prevented the computer revolution..."
+    },
+    {
+      "vault_item_id": "cf_002_backprop_classified",
+      "category": "controversy_files",
+      "unlock_condition": {
+        "type": "session_complete",
+        "session_type": "real_applications",
+        "minimum_score": 0.75
+      },
+      "title": "When Backpropagation Was Classified",
+      "preview": "The US government classified neural network training as a military secret in 1986..."
+    },
+    {
+      "vault_item_id": "bm_002_chain_rule_elegance",
+      "category": "beautiful_mind",
+      "unlock_condition": {
+        "type": "all_sessions_complete",
+        "minimum_average_score": 0.8,
+        "exploration_bonus": "optimization_landscape_expert"
+      },
+      "title": "The Infinite Elegance of the Chain Rule",
+      "preview": "How one mathematical rule enables infinite complexity and the learning of every AI system..."
+    }
+  ],
+  
+  "connections_to_week1": {
+    "mathematical_building": [
+      "Derivatives extend linear transformations to curved spaces",
+      "Gradients combine vectors (Week 1) with rates of change",
+      "Optimization landscapes use eigenvalue concepts for convergence",
+      "Chain rule composes transformations like matrix multiplication"
+    ],
+    "algorithmic_progression": [
+      "Week 1: Static transformations → Week 2: Dynamic optimization",
+      "Week 1: Matrix operations → Week 2: Iterative improvement", 
+      "Week 1: Eigenvalues → Week 2: Gradient directions",
+      "Week 1: PageRank → Week 2: How PageRank parameters get optimized"
+    ]
+  },
+  
+  "daily_rotation_schedule": {
+    "day_1": {
+      "recommended_session": "math",
+      "focus": "Derivative foundations and geometric meaning",
+      "motivation": "Understand the mathematical force that enables all learning",
+      "connection_to_week1": "Derivatives are like matrix transformations but for curved spaces"
+    },
+    "day_2": {
+      "recommended_session": "coding",
+      "focus": "Implement gradient descent algorithm",
+      "motivation": "Build the core algorithm that trains every AI system",
+      "connection_to_week1": "Use your linear algebra skills to implement optimization"
+    },
+    "day_3": {
+      "recommended_session": "visual_projects",
+      "focus": "Explore optimization landscapes visually",
+      "motivation": "See how AI systems navigate towards better solutions",
+      "connection_to_week1": "Combine geometric intuition with optimization dynamics"
+    },
+    "day_4": {
+      "recommended_session": "real_applications",
+      "focus": "Neural network training applications",
+      "motivation": "Apply calculus to train actual AI systems",
+      "connection_to_week1": "See how matrix operations combine with optimization"
+    },
+    "day_5": {
+      "recommended_session": "math",
+      "focus": "Advanced concepts: chain rule and multivariable calculus",
+      "motivation": "Master the mathematics behind deep learning",
+      "connection_to_week1": "Chain rule composes functions like matrix multiplication"
+    },
+    "day_6": {
+      "recommended_session": "coding",
+      "focus": "Advanced optimization algorithms",
+      "motivation": "Implement the algorithms used in production AI systems",
+      "connection_to_week1": "Apply computational linear algebra to optimization"
+    },
+    "day_7": {
+      "recommended_session": "visual_projects",
+      "focus": "Creative exploration and parameter tuning",
+      "motivation": "Develop intuition for hyperparameter optimization",
+      "connection_to_week1": "Combine visualization skills with optimization insight"
+    }
+  },
+  
+  "session_dependencies": {
+    "math": {
+      "prerequisites": ["week1_math_complete"],
+      "unlocks": ["coding", "visual_projects"],
+      "builds_on": "Linear algebra geometric intuition"
+    },
+    "coding": {
+      "prerequisites": ["math", "week1_coding_complete"],
+      "unlocks": ["real_applications"],
+      "builds_on": "Matrix operations and vector computations"
+    },
+    "visual_projects": {
+      "prerequisites": ["math", "week1_visual_complete"],
+      "unlocks": ["real_applications"],
+      "builds_on": "Geometric visualization and interactive exploration"
+    },
+    "real_applications": {
+      "prerequisites": ["math", "coding", "week1_applications_complete"],
+      "unlocks": ["week_3_access"],
+      "builds_on": "PageRank eigenvalues and data transformation concepts"
+    }
+  },
+  
+  "progress_tracking": {
+    "completion_criteria": {
+      "math": {
+        "derivative_computation": "Correctly compute derivatives for polynomial, exponential, and composite functions",
+        "gradient_understanding": "Explain gradients geometrically and connect to optimization",
+        "chain_rule_mastery": "Apply chain rule to nested functions with confidence"
+      },
+      "coding": {
+        "gradient_descent_implementation": "Working gradient descent that converges reliably",
+        "numerical_derivatives": "Accurate finite difference approximations",
+        "optimization_analysis": "Code that detects convergence and handles edge cases"
+      },
+      "visual_projects": {
+        "landscape_exploration": "Interact with all optimization landscape demos",
+        "parameter_sensitivity": "Understand learning rate, momentum effects visually",
+        "trajectory_analysis": "Predict and explain optimization paths"
+      },
+      "real_applications": {
+        "neural_network_training": "Implement backpropagation for simple network",
+        "business_optimization": "Apply calculus to solve real business problem",
+        "production_understanding": "Explain how calculus powers production AI systems"
+      }
+    },
+    "mastery_indicators": [
+      "Can implement gradient descent from mathematical first principles",
+      "Predicts optimization behavior from function characteristics",
+      "Explains how neural networks learn using calculus concepts",
+      "Connects optimization theory to business value creation"
+    ]
+  },
+  
+  "week3_preparation": {
+    "upcoming_topic": "Week 3: Probability and Statistics - Quantifying Uncertainty",
+    "connection": "Calculus handles deterministic optimization. Probability handles uncertain, noisy real-world data.",
+    "motivation": "You can now optimize perfectly with calculus. Next: handle the messy, uncertain reality of real data.",
+    "bridge_concepts": [
+      "Optimization under uncertainty",
+      "Expected value as integration",
+      "Probability distributions and their derivatives",
+      "Bayesian optimization preview"
+    ]
+  },
+  
+  "troubleshooting": {
+    "common_struggles": [
+      {
+        "issue": "Gradient descent seems to bounce around instead of converging",
+        "solution": "Learning rate too high - try smaller steps",
+        "demo": "Use learning rate comparison visualization",
+        "mathematical_insight": "Step size must be smaller than curvature"
+      },
+      {
+        "issue": "Don't see connection between derivatives and machine learning",
+        "solution": "Focus on derivatives as 'direction to improve'",
+        "demo": "Watch neural network loss decrease with gradient steps",
+        "business_insight": "Every AI improvement uses this mathematical principle"
+      },
+      {
+        "issue": "Chain rule feels mechanical and unmotivated",
+        "solution": "Think of it as 'transforming through multiple layers'",
+        "demo": "See chain rule in neural network backpropagation",
+        "preview": "This enables deep learning in Week 7-9"
+      },
+      {
+        "issue": "Multivariable calculus seems overwhelming",
+        "solution": "Start with 2D visualizations, build intuition gradually",
+        "demo": "Use 3D landscape explorer with simple functions",
+        "connection": "Builds directly on Week 1 vector concepts"
+      }
+    ],
+    "debugging_strategies": [
+      "Visualize function behavior before optimizing",
+      "Check gradients with numerical approximation",
+      "Start with simple functions, increase complexity gradually",
+      "Always plot optimization trajectories for insight"
+    ]
+  },
+  
+  "extension_challenges": {
+    "for_fast_learners": [
+      {
+        "challenge": "Implement Newton's method for faster convergence",
+        "skills": "Second derivatives, matrix inversion",
+        "connection": "Uses Hessian matrices (Week 1 + Week 2 combined)"
+      },
+      {
+        "challenge": "Create adaptive learning rate algorithms",
+        "skills": "Momentum, RMSprop, Adam optimizers",
+        "preview": "Algorithms used in production deep learning"
+      },
+      {
+        "challenge": "Explore non-convex optimization challenges",
+        "skills": "Saddle points, local minima escape",
+        "connection": "Real challenges in neural network training"
+      }
+    ]
+  }
+}

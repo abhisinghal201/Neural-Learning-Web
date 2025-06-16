@@ -1,0 +1,314 @@
+{
+  "week_metadata": {
+    "phase": 1,
+    "week": 1,
+    "title": "Linear Algebra - The Language of AI",
+    "subtitle": "Master the mathematical foundation that powers all machine learning",
+    "description": "Discover how vectors and matrices form the fundamental language of artificial intelligence. From Google's PageRank algorithm to neural network operations, linear algebra is the mathematical engine that makes AI possible.",
+    "learning_objectives": [
+      "Understand vectors and matrices as geometric transformations",
+      "Master fundamental operations: addition, multiplication, transpose",
+      "Visualize eigenvalues and eigenvectors as natural directions",
+      "Apply linear algebra to real problems: PageRank, data analysis",
+      "Build geometric intuition for machine learning foundations"
+    ],
+    "prerequisites": [
+      "Basic high school algebra",
+      "Coordinate geometry concepts",
+      "Willingness to think geometrically"
+    ],
+    "estimated_total_time": "6-8 hours across 7 days",
+    "difficulty_level": "foundational",
+    "historical_context": "Linear algebra emerged from solving systems of equations in the 1800s. Today, every AI system relies on these mathematical tools - from neural networks to computer vision.",
+    "motivation": "Google's $1 trillion valuation started with one linear algebra concept: eigenvalues. Every image you see, every recommendation you receive, every AI breakthrough - it all starts here."
+  },
+  
+  "daily_sessions": {
+    "math": {
+      "session_type": "math",
+      "title": "Mathematical Deep Dive",
+      "icon": "brain",
+      "duration_minutes": 25,
+      "content_file": "lesson.md",
+      "focus": "Theory and mathematical foundations",
+      "description": "Build deep mathematical understanding of linear algebra concepts",
+      "learning_outcomes": [
+        "Understand vector spaces and linear transformations",
+        "Master matrix operations and their geometric meaning",
+        "Grasp eigenvalue/eigenvector concepts intuitively",
+        "Connect linear algebra to machine learning algorithms"
+      ],
+      "key_concepts": [
+        "Vector spaces and basis vectors",
+        "Linear transformations and matrices",
+        "Eigenvalues and eigenvectors",
+        "Geometric interpretation of operations"
+      ],
+      "assessment_criteria": [
+        "Can explain concepts geometrically",
+        "Understands why operations work",
+        "Connects theory to applications"
+      ]
+    },
+    
+    "coding": {
+      "session_type": "coding",
+      "title": "Implementation Practice",
+      "icon": "code",
+      "duration_minutes": 25,
+      "content_file": "exercises.py",
+      "focus": "Programming and algorithm implementation",
+      "description": "Implement linear algebra operations from scratch to understand computational aspects",
+      "learning_outcomes": [
+        "Implement vector and matrix operations",
+        "Build linear regression using normal equation",
+        "Create 2D transformation functions",
+        "Develop computational thinking for ML"
+      ],
+      "key_concepts": [
+        "Vector arithmetic implementation",
+        "Matrix multiplication algorithms",
+        "Linear system solving",
+        "Computational complexity considerations"
+      ],
+      "programming_skills": [
+        "Python list comprehensions",
+        "Nested loops for matrix operations",
+        "Function composition",
+        "Algorithm optimization"
+      ],
+      "assessment_criteria": [
+        "Code runs without errors",
+        "Implements algorithms correctly",
+        "Shows understanding of complexity",
+        "Uses proper Python conventions"
+      ]
+    },
+    
+    "visual_projects": {
+      "session_type": "visual_projects",
+      "title": "Interactive Visualizations",
+      "icon": "eye",
+      "duration_minutes": 25,
+      "content_file": "visualization.py",
+      "project_file": "project.md",
+      "focus": "Visual learning and interactive exploration",
+      "description": "Create and interact with visualizations that make linear algebra concepts tangible",
+      "learning_outcomes": [
+        "Visualize matrix transformations in real-time",
+        "Explore vector operations interactively",
+        "See eigenvalues/eigenvectors geometrically",
+        "Build intuition through visual experimentation"
+      ],
+      "key_concepts": [
+        "Geometric transformations",
+        "Vector addition parallelogram rule",
+        "Eigenspaces as invariant directions",
+        "Data visualization principles"
+      ],
+      "tools_used": [
+        "Matplotlib for interactive plots",
+        "NumPy for numerical computations",
+        "Browser-based Python (Pyodide)",
+        "Real-time parameter adjustment"
+      ],
+      "visual_elements": [
+        "Matrix transformation sliders",
+        "Vector operation playground",
+        "Eigenvalue/eigenvector overlays",
+        "Real-time geometric feedback"
+      ],
+      "assessment_criteria": [
+        "Can interpret visualizations correctly",
+        "Explores different parameter combinations",
+        "Connects visual patterns to theory",
+        "Demonstrates geometric intuition"
+      ]
+    },
+    
+    "real_applications": {
+      "session_type": "real_applications",
+      "title": "Real-World Applications",
+      "icon": "target",
+      "duration_minutes": 25,
+      "project_file": "project.md",
+      "focus": "Business applications and practical use cases",
+      "description": "Apply linear algebra to solve real problems and understand industry applications",
+      "learning_outcomes": [
+        "Implement Google's PageRank algorithm",
+        "Analyze real data using linear algebra",
+        "Understand business impact of mathematics",
+        "Connect theory to industry applications"
+      ],
+      "key_concepts": [
+        "PageRank as eigenvalue problem",
+        "Data analysis with matrices",
+        "Recommendation systems basics",
+        "Business value of mathematics"
+      ],
+      "real_world_connections": [
+        "Google search ranking algorithms",
+        "Netflix recommendation systems",
+        "Financial portfolio optimization",
+        "Computer graphics transformations"
+      ],
+      "business_impact": [
+        "$1 trillion Google valuation from PageRank",
+        "Netflix saves $1B/year with recommendations",
+        "Graphics industry built on transformations",
+        "Finance uses portfolio optimization"
+      ],
+      "assessment_criteria": [
+        "Understands business applications",
+        "Can explain algorithmic impact",
+        "Connects math to real problems",
+        "Demonstrates practical thinking"
+      ]
+    }
+  },
+  
+  "vault_rewards": [
+    {
+      "vault_item_id": "sa_001_pagerank_secret",
+      "category": "secret_archives",
+      "unlock_condition": {
+        "type": "session_complete",
+        "session_type": "real_applications",
+        "minimum_score": 0.8
+      },
+      "title": "Google's $1 Trillion Secret",
+      "preview": "How one eigenvector calculation built the world's most valuable company..."
+    },
+    {
+      "vault_item_id": "bm_001_matrix_poetry", 
+      "category": "beautiful_mind",
+      "unlock_condition": {
+        "type": "all_sessions_complete",
+        "minimum_average_score": 0.75
+      },
+      "title": "The Poetry of Matrix Multiplication",
+      "preview": "Hermann Weyl called it 'the most beautiful equation in mathematics'..."
+    },
+    {
+      "vault_item_id": "cf_001_linear_algebra_wars",
+      "category": "controversy_files", 
+      "unlock_condition": {
+        "type": "session_complete",
+        "session_type": "math",
+        "bonus_condition": "eigenvalue_visualization_explored"
+      },
+      "title": "The Great Vector Space Wars of 1920",
+      "preview": "How Hilbert and Banach's feud over infinite dimensions shaped modern AI..."
+    }
+  ],
+  
+  "daily_rotation_schedule": {
+    "day_1": {
+      "recommended_session": "math",
+      "focus": "Build theoretical foundation",
+      "motivation": "Start with the 'why' - understand what makes linear algebra magical"
+    },
+    "day_2": {
+      "recommended_session": "coding", 
+      "focus": "Implement core operations",
+      "motivation": "Get your hands dirty with the computational reality"
+    },
+    "day_3": {
+      "recommended_session": "visual_projects",
+      "focus": "See the geometry come alive", 
+      "motivation": "Transform abstract concepts into visual understanding"
+    },
+    "day_4": {
+      "recommended_session": "real_applications",
+      "focus": "Apply to real problems",
+      "motivation": "See how billion-dollar companies use these concepts"
+    },
+    "day_5": {
+      "recommended_session": "math",
+      "focus": "Deepen theoretical understanding",
+      "motivation": "Revisit theory with new practical insights"
+    },
+    "day_6": {
+      "recommended_session": "coding",
+      "focus": "Advanced implementation",
+      "motivation": "Tackle more complex coding challenges"
+    },
+    "day_7": {
+      "recommended_session": "visual_projects",
+      "focus": "Creative exploration",
+      "motivation": "Experiment freely and build geometric intuition"
+    }
+  },
+  
+  "session_dependencies": {
+    "math": {
+      "prerequisites": [],
+      "unlocks": ["coding", "visual_projects"]
+    },
+    "coding": {
+      "prerequisites": ["math"],
+      "unlocks": ["real_applications"]
+    },
+    "visual_projects": {
+      "prerequisites": ["math"],
+      "unlocks": ["real_applications"]
+    },
+    "real_applications": {
+      "prerequisites": ["math", "coding"],
+      "unlocks": ["week_2_access"]
+    }
+  },
+  
+  "progress_tracking": {
+    "completion_criteria": {
+      "math": {
+        "theory_understanding": "Pass conceptual quiz with 80%+ score",
+        "geometric_intuition": "Correctly interpret 3+ transformation examples"
+      },
+      "coding": {
+        "implementation_success": "All TODO functions implemented and tested",
+        "code_quality": "Clean, readable, properly commented code"
+      },
+      "visual_projects": {
+        "exploration_depth": "Interact with all 4 visualization demos",
+        "insight_generation": "Document 3+ visual insights gained"
+      },
+      "real_applications": {
+        "application_understanding": "Successfully implement PageRank",
+        "business_connection": "Explain business value of 2+ applications"
+      }
+    },
+    "mastery_indicators": [
+      "Can teach concepts to others",
+      "Connects linear algebra to ML algorithms",
+      "Demonstrates geometric intuition",
+      "Applies concepts to new problems"
+    ]
+  },
+  
+  "next_week_preparation": {
+    "teaser": "Week 2: Calculus - The Engine of Learning",
+    "motivation": "You've mastered the language of AI. Now learn how machines actually learn and improve!",
+    "connection": "Linear algebra provides the structure - calculus provides the motion. Together, they enable neural networks to learn from data."
+  },
+  
+  "troubleshooting": {
+    "common_struggles": [
+      {
+        "issue": "Matrix multiplication seems arbitrary",
+        "solution": "Focus on geometric interpretation - it's composing transformations",
+        "demo": "Use matrix transformer with two consecutive rotations"
+      },
+      {
+        "issue": "Eigenvalues feel abstract",
+        "solution": "Think of them as 'special directions' that don't rotate",
+        "demo": "Watch eigenvectors in matrix transformer"
+      },
+      {
+        "issue": "Can't see connection to ML",
+        "solution": "Every neural network layer is a matrix multiplication",
+        "preview": "We'll see this explicitly in Week 7"
+      }
+    ]
+  }
+}

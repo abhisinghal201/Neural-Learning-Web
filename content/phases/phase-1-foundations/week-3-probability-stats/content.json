@@ -1,0 +1,425 @@
+{
+  "week_metadata": {
+    "phase": 1,
+    "week": 3,
+    "title": "Probability & Statistics - Quantifying Uncertainty",
+    "subtitle": "Master the mathematics of uncertainty and decision-making under incomplete information",
+    "description": "Discover how probability theory enables AI systems to reason under uncertainty, make decisions with incomplete data, and quantify confidence in predictions. From spam detection to medical diagnosis, learn the mathematical tools that handle real-world messiness.",
+    "learning_objectives": [
+      "Understand probability distributions and their role in modeling uncertainty",
+      "Master Bayes' theorem as the foundation of learning from evidence",
+      "Apply statistical inference to validate machine learning models",
+      "Quantify uncertainty in predictions and decision-making",
+      "Connect probability theory to real AI systems and business applications"
+    ],
+    "prerequisites": [
+      "Week 1: Linear algebra for multivariate distributions",
+      "Week 2: Calculus for continuous probability distributions", 
+      "Basic understanding of functions and mathematical reasoning"
+    ],
+    "estimated_total_time": "6-8 hours across 7 days",
+    "difficulty_level": "foundational_to_intermediate",
+    "historical_context": "Probability theory emerged from gambling problems in the 1600s but became the foundation of modern AI. Every recommendation system, medical AI, and autonomous vehicle relies on probabilistic reasoning to handle uncertainty.",
+    "motivation": "Perfect information is a luxury AI systems rarely have. Learn how Netflix recommends movies with incomplete data, how medical AI diagnoses with uncertainty, and how autonomous vehicles make life-critical decisions under incomplete information."
+  },
+  
+  "daily_sessions": {
+    "math": {
+      "session_type": "math",
+      "title": "Mathematical Deep Dive",
+      "icon": "dice",
+      "duration_minutes": 25,
+      "content_file": "lesson.md",
+      "focus": "Probability theory, distributions, and statistical inference",
+      "description": "Build deep understanding of probabilistic reasoning and statistical methods",
+      "learning_outcomes": [
+        "Master probability distributions and their properties",
+        "Understand Bayes' theorem and its applications",
+        "Grasp statistical inference and hypothesis testing",
+        "Connect probability to machine learning theory"
+      ],
+      "key_concepts": [
+        "Probability spaces and random variables",
+        "Bayes' theorem and conditional probability",
+        "Statistical distributions (normal, binomial, Poisson)",
+        "Central limit theorem and law of large numbers",
+        "Statistical inference and confidence intervals"
+      ],
+      "mathematical_connections": [
+        "Probability extends deterministic math to uncertain scenarios",
+        "Distributions generalize functions to handle randomness",
+        "Bayes' theorem enables learning from evidence",
+        "Statistics provides tools for validating models"
+      ],
+      "assessment_criteria": [
+        "Can work with probability distributions confidently",
+        "Applies Bayes' theorem to solve inference problems",
+        "Understands statistical significance and p-values",
+        "Connects probability theory to ML applications"
+      ]
+    },
+    
+    "coding": {
+      "session_type": "coding",
+      "title": "Statistical Computing",
+      "icon": "code",
+      "duration_minutes": 25,
+      "content_file": "exercises.py",
+      "focus": "Probabilistic algorithms and statistical analysis",
+      "description": "Implement probability distributions, Bayesian inference, and statistical tests",
+      "learning_outcomes": [
+        "Implement common probability distributions from scratch",
+        "Build Bayesian inference algorithms",
+        "Create Monte Carlo simulation methods",
+        "Develop statistical testing frameworks"
+      ],
+      "key_concepts": [
+        "Random number generation and sampling",
+        "Bayesian parameter estimation",
+        "Hypothesis testing implementation",
+        "Monte Carlo methods and simulation"
+      ],
+      "programming_skills": [
+        "Statistical libraries and random sampling",
+        "Numerical integration for probability",
+        "Bayesian computation techniques",
+        "Data analysis and visualization"
+      ],
+      "algorithmic_focus": [
+        "Sampling algorithms (rejection, importance sampling)",
+        "Bayesian inference (conjugate priors, MCMC preview)",
+        "Statistical tests (t-tests, chi-square)",
+        "Bootstrap and resampling methods"
+      ],
+      "assessment_criteria": [
+        "Implements probability distributions accurately",
+        "Bayesian inference code produces correct posteriors",
+        "Statistical tests work correctly on real data",
+        "Code demonstrates understanding of uncertainty quantification"
+      ]
+    },
+    
+    "visual_projects": {
+      "session_type": "visual_projects",
+      "title": "Probability Visualizations",
+      "icon": "eye",
+      "duration_minutes": 25,
+      "content_file": "visualization.py",
+      "project_file": "project.md",
+      "focus": "Interactive exploration of probabilistic concepts",
+      "description": "Visualize probability distributions, Bayesian updating, and statistical phenomena",
+      "learning_outcomes": [
+        "Explore probability distributions interactively",
+        "Visualize Bayesian updating in real-time",
+        "Understand central limit theorem through simulation",
+        "See statistical concepts through visual experimentation"
+      ],
+      "key_concepts": [
+        "Distribution shape and parameter effects",
+        "Bayesian prior/posterior updating",
+        "Sampling distributions and convergence",
+        "Confidence intervals and hypothesis testing"
+      ],
+      "tools_used": [
+        "Interactive distribution plotters",
+        "Bayesian updating simulators",
+        "Monte Carlo visualization",
+        "Statistical testing dashboards"
+      ],
+      "visual_elements": [
+        "Real-time distribution parameter adjustment",
+        "Bayesian belief updating animations",
+        "Central limit theorem demonstrations",
+        "P-value and significance level exploration"
+      ],
+      "assessment_criteria": [
+        "Can predict distribution behavior from parameters",
+        "Understands Bayesian updating through visualization",
+        "Explains central limit theorem using simulations",
+        "Interprets statistical test results correctly"
+      ]
+    },
+    
+    "real_applications": {
+      "session_type": "real_applications",
+      "title": "Probabilistic AI Systems",
+      "icon": "target",
+      "duration_minutes": 25,
+      "project_file": "project.md",
+      "focus": "Real-world applications of probability in AI and business",
+      "description": "Apply probabilistic reasoning to solve real problems in recommendation systems, medical diagnosis, and business analytics",
+      "learning_outcomes": [
+        "Implement spam detection using naive Bayes",
+        "Build recommendation systems with uncertainty quantification",
+        "Apply A/B testing for business decision-making",
+        "Understand medical AI and diagnostic uncertainty"
+      ],
+      "key_concepts": [
+        "Naive Bayes classification",
+        "Collaborative filtering with uncertainty",
+        "A/B testing and statistical significance",
+        "Medical diagnosis and false positive/negative rates"
+      ],
+      "real_world_connections": [
+        "Gmail spam detection (naive Bayes)",
+        "Netflix recommendation uncertainty",
+        "Google/Facebook A/B testing platforms",
+        "Medical AI diagnostic systems"
+      ],
+      "business_impact": [
+        "Email: 99.9% spam detection accuracy saves billions",
+        "Streaming: Uncertainty quantification improves recommendations",
+        "Tech: A/B testing drives product optimization worth billions",
+        "Healthcare: Probabilistic diagnosis saves lives and reduces costs"
+      ],
+      "industry_applications": [
+        "Text classification and sentiment analysis",
+        "Recommendation systems with confidence scores",
+        "Experimental design and causal inference",
+        "Risk assessment and financial modeling"
+      ],
+      "assessment_criteria": [
+        "Implements working probabilistic classifiers",
+        "Understands business value of uncertainty quantification",
+        "Can design and analyze A/B testing experiments",
+        "Connects probability theory to real-world decision making"
+      ]
+    }
+  },
+  
+  "vault_rewards": [
+    {
+      "vault_item_id": "sa_003_monty_hall_paradox",
+      "category": "secret_archives",
+      "unlock_condition": {
+        "type": "session_complete",
+        "session_type": "math",
+        "minimum_score": 0.8,
+        "bonus_condition": "bayes_theorem_mastery"
+      },
+      "title": "The Monty Hall Paradox That Broke Mathematics",
+      "preview": "How a game show question divided mathematicians and revealed the counterintuitive nature of probability..."
+    },
+    {
+      "vault_item_id": "cf_003_statistical_significance_wars",
+      "category": "controversy_files",
+      "unlock_condition": {
+        "type": "session_complete",
+        "session_type": "real_applications",
+        "minimum_score": 0.75
+      },
+      "title": "The P-Hacking Scandal That Shook Science",
+      "preview": "How the misuse of statistical significance led to a reproducibility crisis across multiple fields..."
+    },
+    {
+      "vault_item_id": "bm_003_bayes_theorem_elegance",
+      "category": "beautiful_mind",
+      "unlock_condition": {
+        "type": "all_sessions_complete",
+        "minimum_average_score": 0.8,
+        "exploration_bonus": "bayesian_reasoning_expert"
+      },
+      "title": "The Infinite Wisdom of Bayes' Theorem",
+      "preview": "How one simple equation enables all learning and is the mathematical foundation of intelligence itself..."
+    }
+  ],
+  
+  "connections_to_previous_weeks": {
+    "building_on_week1": [
+      "Multivariate probability distributions use linear algebra concepts",
+      "Covariance matrices (Week 1) become central to multivariate normal distributions",
+      "Eigenvalues/eigenvectors appear in principal component analysis of data",
+      "Matrix operations enable efficient computation of probabilistic models"
+    ],
+    "building_on_week2": [
+      "Probability density functions use calculus for continuous distributions",
+      "Maximum likelihood estimation uses optimization (gradient descent)",
+      "Bayesian inference often requires numerical optimization",
+      "Statistical learning theory connects optimization to generalization"
+    ],
+    "mathematical_progression": [
+      "Week 1: Deterministic transformations → Week 3: Probabilistic transformations",
+      "Week 2: Optimization under certainty → Week 3: Decision-making under uncertainty",
+      "Weeks 1-2: Perfect information → Week 3: Learning from noisy, incomplete data"
+    ]
+  },
+  
+  "daily_rotation_schedule": {
+    "day_1": {
+      "recommended_session": "math",
+      "focus": "Probability fundamentals and distributions",
+      "motivation": "Understand how to mathematically model uncertainty",
+      "connection_to_previous": "Extend your mathematical toolkit from deterministic to probabilistic"
+    },
+    "day_2": {
+      "recommended_session": "coding",
+      "focus": "Implement probability distributions and sampling",
+      "motivation": "Build computational tools for probabilistic reasoning",
+      "connection_to_previous": "Apply programming skills to statistical computing"
+    },
+    "day_3": {
+      "recommended_session": "visual_projects",
+      "focus": "Explore distributions and Bayesian updating",
+      "motivation": "Develop intuition for probabilistic concepts",
+      "connection_to_previous": "Use visualization skills to understand uncertainty"
+    },
+    "day_4": {
+      "recommended_session": "real_applications",
+      "focus": "Spam detection and recommendation systems",
+      "motivation": "See how probability powers real AI systems",
+      "connection_to_previous": "Apply mathematical foundations to business problems"
+    },
+    "day_5": {
+      "recommended_session": "math",
+      "focus": "Bayes' theorem and statistical inference",
+      "motivation": "Master the mathematics of learning from evidence",
+      "connection_to_previous": "Combine optimization with probabilistic reasoning"
+    },
+    "day_6": {
+      "recommended_session": "coding",
+      "focus": "Bayesian inference and hypothesis testing",
+      "motivation": "Implement the algorithms that validate AI systems",
+      "connection_to_previous": "Build on coding skills with statistical methods"
+    },
+    "day_7": {
+      "recommended_session": "visual_projects",
+      "focus": "Monte Carlo simulations and statistical testing",
+      "motivation": "Explore advanced probabilistic concepts",
+      "connection_to_previous": "Synthesize visualization with statistical reasoning"
+    }
+  },
+  
+  "session_dependencies": {
+    "math": {
+      "prerequisites": ["week1_math_complete", "week2_math_complete"],
+      "unlocks": ["coding", "visual_projects"],
+      "builds_on": "Mathematical maturity from linear algebra and calculus"
+    },
+    "coding": {
+      "prerequisites": ["math", "week1_coding_complete", "week2_coding_complete"],
+      "unlocks": ["real_applications"],
+      "builds_on": "Programming skills and numerical computation experience"
+    },
+    "visual_projects": {
+      "prerequisites": ["math", "week1_visual_complete", "week2_visual_complete"],
+      "unlocks": ["real_applications"],
+      "builds_on": "Visualization skills and geometric intuition"
+    },
+    "real_applications": {
+      "prerequisites": ["math", "coding", "week1_applications_complete", "week2_applications_complete"],
+      "unlocks": ["week_4_access"],
+      "builds_on": "Understanding of optimization and real-world problem solving"
+    }
+  },
+  
+  "progress_tracking": {
+    "completion_criteria": {
+      "math": {
+        "distribution_mastery": "Correctly work with normal, binomial, and Poisson distributions",
+        "bayes_theorem_application": "Solve conditional probability problems using Bayes' theorem",
+        "statistical_inference": "Understand confidence intervals and hypothesis testing"
+      },
+      "coding": {
+        "probability_implementation": "Implement common distributions and sampling methods",
+        "bayesian_inference": "Build working Bayesian parameter estimation",
+        "statistical_testing": "Create hypothesis testing framework with correct p-values"
+      },
+      "visual_projects": {
+        "distribution_exploration": "Explore all major probability distributions interactively",
+        "bayesian_updating": "Understand prior/posterior updating through visualization",
+        "simulation_mastery": "Use Monte Carlo methods to verify theoretical results"
+      },
+      "real_applications": {
+        "classifier_implementation": "Build working naive Bayes spam detector",
+        "ab_testing_analysis": "Design and analyze A/B testing experiments",
+        "uncertainty_quantification": "Apply probabilistic reasoning to business decisions"
+      }
+    },
+    "mastery_indicators": [
+      "Can reason probabilistically about uncertain scenarios",
+      "Applies Bayes' theorem naturally to learning problems",
+      "Understands when and how to use different statistical tests",
+      "Connects probability theory to practical AI system design"
+    ]
+  },
+  
+  "week4_preparation": {
+    "upcoming_topic": "Week 4: Eigenvalues & PCA - Finding Structure in Data",
+    "connection": "Probability handles uncertainty in data. PCA finds the most important patterns in uncertain, high-dimensional data.",
+    "motivation": "You can now handle uncertainty mathematically. Next: find the essential structure hidden in noisy, high-dimensional data.",
+    "bridge_concepts": [
+      "Covariance matrices (probability) → eigenvalue decomposition (linear algebra)",
+      "Statistical distributions → principal components",
+      "Uncertainty quantification → dimensionality reduction",
+      "Bayesian inference → probabilistic PCA"
+    ]
+  },
+  
+  "troubleshooting": {
+    "common_struggles": [
+      {
+        "issue": "Conditional probability and Bayes' theorem feel unintuitive",
+        "solution": "Use frequency interpretation and concrete examples",
+        "demo": "Medical diagnosis example with base rates and test accuracy",
+        "business_insight": "Most AI 'intelligence' is actually sophisticated probability calculation"
+      },
+      {
+        "issue": "Don't see connection between probability and machine learning",
+        "solution": "Focus on uncertainty quantification in predictions",
+        "demo": "Show confidence intervals in regression predictions",
+        "ml_connection": "Every ML model outputs probabilities, not certainties"
+      },
+      {
+        "issue": "Statistical significance and p-values seem arbitrary",
+        "solution": "Understand p-values as evidence strength, not binary decisions",
+        "demo": "A/B testing with different effect sizes and sample sizes",
+        "industry_context": "Tech companies run thousands of A/B tests using these principles"
+      },
+      {
+        "issue": "Monte Carlo methods seem like 'just simulation'",
+        "solution": "Show how simulation solves analytically intractable problems",
+        "demo": "Estimate π using random sampling, solve complex integrals",
+        "advanced_preview": "MCMC methods power modern Bayesian AI systems"
+      }
+    ],
+    "conceptual_bridges": [
+      "Probability extends algebra to handle uncertainty",
+      "Statistics provides quality control for machine learning",
+      "Bayesian thinking is how humans and AI systems learn",
+      "Uncertainty quantification separates good AI from dangerous AI"
+    ]
+  },
+  
+  "extension_challenges": {
+    "for_fast_learners": [
+      {
+        "challenge": "Implement Markov Chain Monte Carlo (MCMC) sampling",
+        "skills": "Advanced Bayesian computation",
+        "connection": "Preview of modern probabilistic programming"
+      },
+      {
+        "challenge": "Build a probabilistic graphical model",
+        "skills": "Conditional independence and factorization",
+        "preview": "Foundation for modern probabilistic AI"
+      },
+      {
+        "challenge": "Implement online Bayesian learning",
+        "skills": "Sequential updating and streaming data",
+        "application": "Real-time recommendation systems"
+      }
+    ]
+  },
+  
+  "ai_ethics_connections": {
+    "uncertainty_and_responsibility": [
+      "AI systems must communicate uncertainty in high-stakes decisions",
+      "Probabilistic thinking helps avoid overconfident AI predictions",
+      "Statistical testing prevents biased conclusions from limited data"
+    ],
+    "real_world_implications": [
+      "Medical AI: Understanding false positive/negative rates saves lives",
+      "Criminal justice: Base rate neglect leads to biased risk assessments",
+      "Autonomous vehicles: Uncertainty quantification is safety-critical"
+    ]
+  }
+}
