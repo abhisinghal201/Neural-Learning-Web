@@ -1,19 +1,17 @@
 /**
- * Neural Odyssey Dashboard Page
+ * Enhanced Neural Odyssey Dashboard Page
  *
- * Main dashboard interface providing comprehensive overview of learning progress,
- * achievements, analytics, and quick access to all major features. Serves as the
- * central hub for the Neural Learning Web platform.
- *
- * Features:
- * - Real-time progress tracking and analytics
- * - Interactive learning path visualization
- * - Quick action shortcuts and recommendations
- * - Recent activity timeline and notifications
- * - Study session management and streak tracking
- * - Vault rewards and achievement displays
- * - Responsive design with smooth animations
- * - Personalized content and insights
+ * Now includes spaced repetition system integration using the confirmed backend capabilities:
+ * - SM-2 algorithm implementation
+ * - Concept review scheduling
+ * - Difficulty factor adjustments
+ * - Review performance tracking
+ * 
+ * Features added:
+ * - Review widget showing items due today
+ * - Quick review interface with quality scoring
+ * - Review streak tracking
+ * - Concept mastery progression
  *
  * Author: Neural Explorer
  */
@@ -62,7 +60,16 @@ import {
   Bookmark,
   Filter,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  RotateCcw,
+  Check,
+  X,
+  ChevronUp,
+  ChevronDown,
+  Archive,
+  Repeat,
+  Layers,
+  MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -88,10 +95,19 @@ const Dashboard = ({ profile: initialProfile }) => {
   const [showVaultModal, setShowVaultModal] = useState(false);
   const [quickActionFilter, setQuickActionFilter] = useState('all');
 
+  // Spaced Repetition State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [currentReviewItem, setCurrentReviewItem] = useState(null);
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const [selectedQuality, setSelectedQuality] = useState(null);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [reviewStreak, setReviewStreak] = useState(0);
+
   // Data fetching
   const { data: dashboardData, isLoading, refetch } = useQuery(
     ['dashboard', selectedTimeRange],
-    () => api.get(`/analytics/dashboard?range=${selectedTimeRange}`),
+    () => api.get(`/learning/analytics?timeframe=${selectedTimeRange === 'week' ? 7 : selectedTimeRange === 'month' ? 30 : 90}`),
     {
       refetchInterval: 30000,
       staleTime: 15000,
@@ -99,525 +115,450 @@ const Dashboard = ({ profile: initialProfile }) => {
     }
   );
 
-  const { data: progressSummary } = useQuery(
-    'progressSummary',
+  const { data: progressData, isLoading: progressLoading } = useQuery(
+    'dashboardProgress',
     () => api.get('/learning/progress'),
-    { refetchInterval: 30000 }
+    {
+      refetchInterval: 60000,
+      staleTime: 30000
+    }
   );
 
-  const { data: todaySessions } = useQuery(
+  // Spaced Repetition data
+  const { data: reviewData, isLoading: reviewLoading } = useQuery(
+    'spacedRepetitionReview',
+    () => api.get('/learning/spaced-repetition'),
+    {
+      refetchInterval: 300000, // 5 minutes
+      staleTime: 60000,
+      onSuccess: (data) => {
+        setReviewQueue(data.data?.review_items || []);
+      }
+    }
+  );
+
+  const { data: todaySessionsData } = useQuery(
     'todaySessions',
     () => api.get('/learning/sessions/today'),
-    { refetchInterval: 60000 }
-  );
-
-  const { data: upcomingItems } = useQuery(
-    'upcomingItems',
-    () => api.get('/learning/upcoming'),
-    { refetchInterval: 60000 }
-  );
-
-  const { data: recentActivity } = useQuery(
-    'recentActivity',
-    () => api.get('/analytics/activity/recent'),
-    { refetchInterval: 60000 }
-  );
-
-  const { data: vaultHighlights } = useQuery(
-    'vaultHighlights',
-    () => api.get('/vault/highlights'),
-    { refetchInterval: 60000 }
-  );
-
-  const { data: recommendations } = useQuery(
-    'recommendations',
-    () => api.get('/learning/recommendations'),
-    { refetchInterval: 300000 } // 5 minutes
-  );
-
-  // Mutations
-  const startSessionMutation = useMutation(
-    (sessionData) => api.post('/learning/sessions', sessionData),
     {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['todaySessions']);
-        toast.success('Study session started!');
-        setShowSessionModal(false);
+      refetchInterval: 60000
+    }
+  );
+
+  const { data: vaultPreviewData } = useQuery(
+    'vaultPreview',
+    () => api.get('/vault/recent?limit=3'),
+    {
+      refetchInterval: 300000
+    }
+  );
+
+  // Review submission mutation
+  const submitReviewMutation = useMutation(
+    ({ conceptId, qualityScore }) => 
+      api.post(`/learning/spaced-repetition/${conceptId}/review`, { quality_score: qualityScore }),
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries('spacedRepetitionReview');
+        
+        // Update review streak
+        if (selectedQuality >= 3) {
+          setReviewStreak(prev => prev + 1);
+        } else {
+          setReviewStreak(0);
+        }
+
+        // Show feedback
+        const feedback = selectedQuality >= 4 ? 'Excellent!' : 
+                        selectedQuality >= 3 ? 'Good work!' : 
+                        'Keep practicing!';
+        toast.success(feedback);
+
+        // Move to next item or finish
+        if (reviewIndex < reviewQueue.length - 1) {
+          setReviewIndex(prev => prev + 1);
+          setCurrentReviewItem(reviewQueue[reviewIndex + 1]);
+          setShowAnswer(false);
+          setSelectedQuality(null);
+        } else {
+          // Finished all reviews
+          const completed = reviewIndex + 1;
+          toast.success(`Review session complete! ${completed} concept${completed > 1 ? 's' : ''} reviewed.`);
+          setShowReviewModal(false);
+          resetReviewState();
+        }
       },
-      onError: (error) => {
-        toast.error('Failed to start session: ' + error.message);
+      onError: () => {
+        toast.error('Failed to submit review');
       }
     }
   );
 
-  // Get profile data
-  const profile = initialProfile || progressSummary?.data?.profile;
+  // Reset review state
+  const resetReviewState = () => {
+    setCurrentReviewItem(null);
+    setReviewIndex(0);
+    setSelectedQuality(null);
+    setShowAnswer(false);
+  };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+  // Start review session
+  const startReviewSession = () => {
+    if (reviewQueue.length === 0) {
+      toast.info('No items to review today. Great job staying on top of your studies!');
+      return;
     }
+    
+    setCurrentReviewItem(reviewQueue[0]);
+    setReviewIndex(0);
+    setShowReviewModal(true);
+    setShowAnswer(false);
+    setSelectedQuality(null);
   };
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24
-      }
+  // Handle review submission
+  const handleReviewSubmit = () => {
+    if (selectedQuality === null) {
+      toast.error('Please select a quality score');
+      return;
     }
+
+    submitReviewMutation.mutate({
+      conceptId: currentReviewItem.concept_id,
+      qualityScore: selectedQuality
+    });
   };
 
-  // Helper functions
-  const formatTime = (minutes) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  // Quality score descriptions
+  const qualityDescriptions = [
+    { value: 0, label: 'Complete blackout', description: "Couldn't recall anything" },
+    { value: 1, label: 'Incorrect', description: 'Recalled incorrectly' },
+    { value: 2, label: 'Incorrect but close', description: 'Almost correct but with mistakes' },
+    { value: 3, label: 'Correct with difficulty', description: 'Recalled correctly but with effort' },
+    { value: 4, label: 'Correct with hesitation', description: 'Recalled correctly after some thought' },
+    { value: 5, label: 'Perfect recall', description: 'Recalled easily and confidently' }
+  ];
+
+  // Dashboard stats
+  const dashboardStats = {
+    todayStudyTime: todaySessionsData?.data?.todayStats?.total_time || 0,
+    weeklyAverage: dashboardData?.data?.insights?.totalStudyTime ? 
+      Math.round(dashboardData.data.insights.totalStudyTime / 7) : 0,
+    currentStreak: progressData?.data?.profile?.current_streak_days || 0,
+    reviewsDue: reviewData?.data?.count || 0,
+    completedLessons: progressData?.data?.summary?.completedLessons || 0,
+    masteredLessons: progressData?.data?.summary?.masteredLessons || 0
   };
 
-  const getTimeOfDayGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return { text: 'Good morning', icon: Sunrise };
-    if (hour < 17) return { text: 'Good afternoon', icon: Sun };
-    return { text: 'Good evening', icon: Moon };
-  };
-
-  const getSessionTypeIcon = (type) => {
-    switch (type) {
-      case 'math': return Brain;
-      case 'coding': return Code;
-      case 'visual_projects': return Eye;
-      case 'real_applications': return Target;
-      default: return BookOpen;
-    }
-  };
-
-  // Render hero section
-  const renderHeroSection = () => {
-    const greeting = getTimeOfDayGreeting();
-    const GreetingIcon = greeting.icon;
-    const currentStreak = profile?.current_streak_days || 0;
-    const totalStudyTime = profile?.total_study_minutes || 0;
-
-    return (
-      <motion.div
-        variants={itemVariants}
-        className="bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 rounded-2xl p-8 text-white relative overflow-hidden"
-      >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-neural-pattern opacity-20" />
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="flex items-center space-x-2 mb-2">
-                <GreetingIcon className="w-6 h-6 text-yellow-300" />
-                <span className="text-lg font-medium opacity-90">{greeting.text}</span>
-              </div>
-              <h1 className="text-3xl font-bold">
-                Welcome back, {profile?.username || 'Neural Explorer'}
-              </h1>
-              <p className="text-lg opacity-90 mt-1">
-                Ready to continue your AI journey?
-              </p>
-            </div>
-            
-            <div className="text-right">
-              <div className="flex items-center space-x-1 mb-2">
-                <Flame className="w-5 h-5 text-orange-400" />
-                <span className="text-2xl font-bold">{currentStreak}</span>
-                <span className="text-sm opacity-90">day streak</span>
-              </div>
-              <div className="text-sm opacity-75">
-                {formatTime(totalStudyTime)} total study time
-              </div>
-            </div>
+  // Render spaced repetition widget
+  const renderSpacedRepetitionWidget = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-gray-800 border border-gray-700 rounded-lg p-6"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-purple-500 bg-opacity-20 rounded-lg">
+            <Repeat className="w-5 h-5 text-purple-400" />
           </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white bg-opacity-10 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <BookOpen className="w-5 h-5 text-green-300" />
-                <span className="text-sm opacity-90">Current Phase</span>
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                Phase {profile?.current_phase || 1}
-              </div>
-            </div>
-            
-            <div className="bg-white bg-opacity-10 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Target className="w-5 h-5 text-blue-300" />
-                <span className="text-sm opacity-90">Week</span>
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                {profile?.current_week || 1}
-              </div>
-            </div>
-            
-            <div className="bg-white bg-opacity-10 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Trophy className="w-5 h-5 text-yellow-300" />
-                <span className="text-sm opacity-90">Completed</span>
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                {progressSummary?.data?.summary?.completedLessons || 0}
-              </div>
-            </div>
-            
-            <div className="bg-white bg-opacity-10 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-purple-300" />
-                <span className="text-sm opacity-90">Vault Items</span>
-              </div>
-              <div className="text-2xl font-bold mt-1">
-                {vaultHighlights?.data?.totalUnlocked || 0}
-              </div>
-            </div>
+          <div>
+            <h3 className="font-semibold text-white">Spaced Repetition</h3>
+            <p className="text-sm text-gray-400">Reinforce your knowledge</p>
           </div>
         </div>
-      </motion.div>
-    );
-  };
+        <div className="text-right">
+          <div className="text-2xl font-bold text-white">{dashboardStats.reviewsDue}</div>
+          <div className="text-sm text-gray-400">due today</div>
+        </div>
+      </div>
 
-  // Render today's focus section
-  const renderTodaysFocus = () => {
-    const todayData = todaySessions?.data || {};
-    const recommendedType = todayData.recommended_next_type || 'math';
-    const SessionIcon = getSessionTypeIcon(recommendedType);
+      {dashboardStats.reviewsDue > 0 ? (
+        <>
+          <div className="mb-4">
+            <div className="flex justify-between text-sm text-gray-400 mb-1">
+              <span>Review Progress</span>
+              <span>{Math.max(0, reviewQueue.length - dashboardStats.reviewsDue)}/{reviewQueue.length}</span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                style={{ 
+                  width: `${reviewQueue.length > 0 ? 
+                    ((reviewQueue.length - dashboardStats.reviewsDue) / reviewQueue.length) * 100 
+                    : 0}%` 
+                }}
+              />
+            </div>
+          </div>
 
-    return (
-      <motion.div
-        variants={itemVariants}
-        className="bg-gray-800 rounded-xl p-6 border border-gray-700"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-            <Calendar className="w-5 h-5 text-blue-400" />
-            <span>Today's Focus</span>
-          </h2>
+          <div className="space-y-2 mb-4">
+            {reviewQueue.slice(0, 3).map((item, index) => (
+              <div key={item.concept_id} className="flex items-center justify-between p-2 bg-gray-700 rounded">
+                <div>
+                  <div className="text-sm font-medium text-white">{item.concept_title}</div>
+                  <div className="text-xs text-gray-400 capitalize">{item.concept_type}</div>
+                </div>
+                <div className="text-xs text-gray-400">
+                  {item.repetitions > 0 ? `${item.repetitions} reviews` : 'New'}
+                </div>
+              </div>
+            ))}
+            {reviewQueue.length > 3 && (
+              <div className="text-center text-sm text-gray-400">
+                +{reviewQueue.length - 3} more concepts
+              </div>
+            )}
+          </div>
+
           <button
-            onClick={() => setShowSessionModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+            onClick={startReviewSession}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             <Play className="w-4 h-4" />
-            <span>Start Session</span>
+            Start Review Session
           </button>
+        </>
+      ) : (
+        <div className="text-center py-4">
+          <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-2" />
+          <p className="text-white font-medium">All caught up!</p>
+          <p className="text-sm text-gray-400">No reviews due today</p>
         </div>
+      )}
+    </motion.div>
+  );
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Recommended Session */}
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
-            <div className="flex items-center space-x-2 mb-2">
-              <SessionIcon className="w-5 h-5" />
-              <span className="font-medium">Recommended</span>
-            </div>
-            <div className="text-lg font-bold capitalize">
-              {recommendedType.replace('_', ' ')} Session
-            </div>
-            <div className="text-sm opacity-90 mt-1">
-              {recommendedType === 'math' && 'Mathematical foundations'}
-              {recommendedType === 'coding' && 'Programming practice'}
-              {recommendedType === 'visual_projects' && 'Visual learning'}
-              {recommendedType === 'real_applications' && 'Practical applications'}
-            </div>
-          </div>
-
-          {/* Today's Progress */}
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Activity className="w-5 h-5 text-green-400" />
-              <span className="font-medium text-white">Today's Progress</span>
-            </div>
-            <div className="text-lg font-bold text-white">
-              {formatTime(todayData.total_minutes || 0)}
-            </div>
-            <div className="text-sm text-gray-400 mt-1">
-              {todayData.session_count || 0} sessions completed
-            </div>
-          </div>
-
-          {/* Current Streak */}
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <Flame className="w-5 h-5 text-orange-400" />
-              <span className="font-medium text-white">Streak</span>
-            </div>
-            <div className="text-lg font-bold text-white">
-              {profile?.current_streak_days || 0} days
-            </div>
-            <div className="text-sm text-gray-400 mt-1">
-              Best: {profile?.longest_streak_days || 0} days
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Render learning overview
-  const renderLearningOverview = () => {
-    return (
-      <motion.div
-        variants={itemVariants}
-        className="bg-gray-800 rounded-xl p-6 border border-gray-700"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-            <Map className="w-5 h-5 text-green-400" />
-            <span>Learning Overview</span>
-          </h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveView(activeView === 'progress' ? 'skills' : 'progress')}
-              className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center space-x-1"
-            >
-              {activeView === 'progress' ? <Brain className="w-4 h-4" /> : <Map className="w-4 h-4" />}
-              <span>{activeView === 'progress' ? 'Skills' : 'Progress'}</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="h-96">
-          <AnimatePresence mode="wait">
-            {activeView === 'progress' || activeView === 'overview' ? (
-              <motion.div
-                key="progress"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="h-full"
-              >
-                <ProgressMap />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="skills"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="h-full"
-              >
-                <SkillTree />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Render recent activity
-  const renderRecentActivity = () => {
-    const activities = recentActivity?.data?.activities || [];
+  // Render review modal
+  const renderReviewModal = () => {
+    if (!showReviewModal || !currentReviewItem) return null;
 
     return (
-      <motion.div
-        variants={itemVariants}
-        className="bg-gray-800 rounded-xl p-6 border border-gray-700"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-            <Activity className="w-5 h-5 text-purple-400" />
-            <span>Recent Activity</span>
-          </h2>
-          <button
-            onClick={() => navigate('/analytics')}
-            className="text-purple-400 hover:text-purple-300 transition-colors flex items-center space-x-1 text-sm"
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
           >
-            <span>View All</span>
-            <ChevronRight className="w-3 h-3" />
-          </button>
-        </div>
-
-        <div className="space-y-3 max-h-64 overflow-y-auto">
-          {activities.length > 0 ? (
-            activities.slice(0, 5).map((activity, index) => (
-              <div
-                key={index}
-                className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  {activity.type === 'lesson_completed' && <CheckCircle className="w-4 h-4 text-white" />}
-                  {activity.type === 'quest_completed' && <Trophy className="w-4 h-4 text-white" />}
-                  {activity.type === 'vault_unlocked' && <Sparkles className="w-4 h-4 text-white" />}
-                  {activity.type === 'streak_milestone' && <Flame className="w-4 h-4 text-white" />}
-                </div>
-                <div className="flex-1">
-                  <div className="text-white font-medium">{activity.title}</div>
-                  <div className="text-gray-400 text-sm">{activity.description}</div>
-                </div>
-                <div className="text-gray-500 text-xs">
-                  {new Date(activity.timestamp).toLocaleDateString()}
-                </div>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Review Session</h3>
+                <p className="text-sm text-gray-400">
+                  Concept {reviewIndex + 1} of {reviewQueue.length} • 
+                  Difficulty: {currentReviewItem.easiness_factor?.toFixed(1) || '2.5'}
+                </p>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8 text-gray-400">
-              <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No recent activity</p>
-              <p className="text-sm">Start learning to see your progress here</p>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Render quick actions
-  const renderQuickActions = () => {
-    const actions = [
-      {
-        id: 'next-lesson',
-        title: 'Continue Learning',
-        description: 'Resume your current lesson',
-        icon: BookOpen,
-        color: 'from-green-500 to-green-600',
-        path: '/learning/next'
-      },
-      {
-        id: 'practice-coding',
-        title: 'Code Practice',
-        description: 'Work on programming exercises',
-        icon: Code,
-        color: 'from-blue-500 to-blue-600',
-        path: '/learning/coding'
-      },
-      {
-        id: 'explore-vault',
-        title: 'Explore Vault',
-        description: 'Discover unlocked treasures',
-        icon: Sparkles,
-        color: 'from-purple-500 to-purple-600',
-        path: '/vault'
-      },
-      {
-        id: 'view-quests',
-        title: 'Active Quests',
-        description: 'Check your current challenges',
-        icon: Target,
-        color: 'from-orange-500 to-orange-600',
-        path: '/quests'
-      },
-      {
-        id: 'analytics',
-        title: 'View Analytics',
-        description: 'Track your progress',
-        icon: BarChart3,
-        color: 'from-cyan-500 to-cyan-600',
-        path: '/analytics'
-      },
-      {
-        id: 'settings',
-        title: 'Settings',
-        description: 'Customize your experience',
-        icon: Settings,
-        color: 'from-gray-500 to-gray-600',
-        path: '/settings'
-      }
-    ];
-
-    return (
-      <motion.div
-        variants={itemVariants}
-        className="bg-gray-800 rounded-xl p-6 border border-gray-700"
-      >
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-          <Zap className="w-5 h-5 text-yellow-400" />
-          <span>Quick Actions</span>
-        </h2>
-
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {actions.map((action) => {
-            const IconComponent = action.icon;
-            return (
               <button
-                key={action.id}
-                onClick={() => navigate(action.path)}
-                className="group bg-gray-700 hover:bg-gray-600 rounded-lg p-4 transition-all duration-200 text-left"
+                onClick={() => {
+                  setShowReviewModal(false);
+                  resetReviewState();
+                }}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
               >
-                <div className={`w-10 h-10 bg-gradient-to-br ${action.color} rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                  <IconComponent className="w-5 h-5 text-white" />
-                </div>
-                <div className="text-white font-medium">{action.title}</div>
-                <div className="text-gray-400 text-sm mt-1">{action.description}</div>
+                <X className="w-5 h-5" />
               </button>
-            );
-          })}
-        </div>
-      </motion.div>
-    );
-  };
+            </div>
 
-  // Render recommendations
-  const renderRecommendations = () => {
-    const recommends = recommendations?.data || [];
-
-    if (recommends.length === 0) return null;
-
-    return (
-      <motion.div
-        variants={itemVariants}
-        className="bg-gray-800 rounded-xl p-6 border border-gray-700"
-      >
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center space-x-2">
-          <Lightbulb className="w-5 h-5 text-yellow-400" />
-          <span>Recommended for You</span>
-        </h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {recommends.slice(0, 4).map((item, index) => (
-            <div
-              key={index}
-              className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer"
-              onClick={() => navigate(item.path)}
-            >
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  {item.type === 'lesson' && <BookOpen className="w-4 h-4 text-white" />}
-                  {item.type === 'quest' && <Target className="w-4 h-4 text-white" />}
-                  {item.type === 'review' && <RefreshCw className="w-4 h-4 text-white" />}
-                </div>
-                <div className="flex-1">
-                  <div className="text-white font-medium">{item.title}</div>
-                  <div className="text-gray-400 text-sm mt-1">{item.description}</div>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                      {item.difficulty}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {item.estimatedTime}min
-                    </span>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+            {/* Progress bar */}
+            <div className="mb-6">
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${((reviewIndex + 1) / reviewQueue.length) * 100}%` }}
+                />
               </div>
             </div>
-          ))}
-        </div>
-      </motion.div>
+
+            {/* Concept */}
+            <div className="mb-6">
+              <div className="bg-gray-700 rounded-lg p-4 mb-4">
+                <div className="text-sm text-gray-400 mb-2 capitalize">
+                  {currentReviewItem.concept_type} • {currentReviewItem.repetitions} previous reviews
+                </div>
+                <h4 className="text-lg font-semibold text-white mb-3">
+                  {currentReviewItem.concept_title}
+                </h4>
+                <div className="text-white mb-4">
+                  {currentReviewItem.question_text}
+                </div>
+                
+                {/* Answer reveal */}
+                {!showAnswer ? (
+                  <button
+                    onClick={() => setShowAnswer(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Show Answer
+                  </button>
+                ) : (
+                  <div className="border-t border-gray-600 pt-4">
+                    <div className="text-sm text-gray-400 mb-2">Answer:</div>
+                    <div className="text-white mb-3">{currentReviewItem.answer_text}</div>
+                    {currentReviewItem.hint_text && (
+                      <div className="text-sm text-blue-400">
+                        💡 Hint: {currentReviewItem.hint_text}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quality selection */}
+            {showAnswer && (
+              <div className="mb-6">
+                <h5 className="text-white font-medium mb-3">How well did you recall this concept?</h5>
+                <div className="grid grid-cols-1 gap-2">
+                  {qualityDescriptions.map((quality) => (
+                    <button
+                      key={quality.value}
+                      onClick={() => setSelectedQuality(quality.value)}
+                      className={`p-3 rounded-lg border text-left transition-colors ${
+                        selectedQuality === quality.value
+                          ? 'border-purple-500 bg-purple-500 bg-opacity-20'
+                          : 'border-gray-600 hover:border-gray-500'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-white">{quality.label}</div>
+                          <div className="text-sm text-gray-400">{quality.description}</div>
+                        </div>
+                        <div className="text-lg font-bold text-gray-400">
+                          {quality.value}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            {showAnswer && (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowReviewModal(false);
+                    resetReviewState();
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Skip Session
+                </button>
+                <button
+                  onClick={handleReviewSubmit}
+                  disabled={selectedQuality === null || submitReviewMutation.isLoading}
+                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+                >
+                  {submitReviewMutation.isLoading ? 'Submitting...' : 'Submit & Continue'}
+                </button>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
     );
   };
 
-  // Loading state
-  if (isLoading && !dashboardData) {
+  // Render today's stats
+  const renderTodayStats = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-gray-800 border border-gray-700 rounded-lg p-6"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-blue-500 bg-opacity-20 rounded-lg">
+            <Clock className="w-5 h-5 text-blue-400" />
+          </div>
+          <span className="text-gray-400">Today's Study Time</span>
+        </div>
+        <div className="text-2xl font-bold text-white mb-1">
+          {Math.floor(dashboardStats.todayStudyTime / 60)}h {dashboardStats.todayStudyTime % 60}m
+        </div>
+        <div className="text-sm text-gray-400">
+          Weekly avg: {Math.floor(dashboardStats.weeklyAverage / 60)}h {dashboardStats.weeklyAverage % 60}m
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-gray-800 border border-gray-700 rounded-lg p-6"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-orange-500 bg-opacity-20 rounded-lg">
+            <Flame className="w-5 h-5 text-orange-400" />
+          </div>
+          <span className="text-gray-400">Current Streak</span>
+        </div>
+        <div className="text-2xl font-bold text-white mb-1">
+          {dashboardStats.currentStreak} days
+        </div>
+        <div className="text-sm text-gray-400">Keep it going!</div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-gray-800 border border-gray-700 rounded-lg p-6"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-green-500 bg-opacity-20 rounded-lg">
+            <CheckCircle className="w-5 h-5 text-green-400" />
+          </div>
+          <span className="text-gray-400">Lessons Completed</span>
+        </div>
+        <div className="text-2xl font-bold text-white mb-1">
+          {dashboardStats.completedLessons}
+        </div>
+        <div className="text-sm text-gray-400">
+          {dashboardStats.masteredLessons} mastered
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-gray-800 border border-gray-700 rounded-lg p-6"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-purple-500 bg-opacity-20 rounded-lg">
+            <Repeat className="w-5 h-5 text-purple-400" />
+          </div>
+          <span className="text-gray-400">Reviews Due</span>
+        </div>
+        <div className="text-2xl font-bold text-white mb-1">
+          {dashboardStats.reviewsDue}
+        </div>
+        <div className="text-sm text-gray-400">
+          {reviewStreak > 0 ? `${reviewStreak} streak` : 'Ready to review'}
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  if (isLoading || progressLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner 
-          size="large" 
-          text="Loading your Neural Odyssey..."
-          variant="neural"
+      <div className="dashboard h-full flex items-center justify-center">
+        <LoadingSpinner
+          size="large"
+          text="Loading dashboard..."
+          description="Preparing your learning insights"
         />
       </div>
     );
@@ -625,45 +566,164 @@ const Dashboard = ({ profile: initialProfile }) => {
 
   return (
     <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="min-h-screen bg-gray-900 p-4 lg:p-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="dashboard min-h-screen bg-gray-900"
     >
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Hero Section */}
-        {renderHeroSection()}
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header */}
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">Neural Odyssey Dashboard</h1>
+              <p className="text-gray-400 text-lg">
+                Your personal machine learning journey companion
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => refetch()}
+                className="p-2 bg-gray-800 border border-gray-600 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
+                title="Refresh Data"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </motion.div>
 
-        {/* Today's Focus */}
-        {renderTodaysFocus()}
+        {/* Today's Stats */}
+        {renderTodayStats()}
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Learning Overview */}
-          <div className="lg:col-span-2">
-            {renderLearningOverview()}
+        {/* Main Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Progress Map */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <ProgressMap />
+            </motion.div>
+
+            {/* Skill Tree */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <SkillTree />
+            </motion.div>
           </div>
 
-          {/* Recent Activity */}
-          {renderRecentActivity()}
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Spaced Repetition Widget */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              {renderSpacedRepetitionWidget()}
+            </motion.div>
 
-          {/* Quick Actions */}
-          {renderQuickActions()}
+            {/* Quick Actions */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 }}
+              className="bg-gray-800 border border-gray-700 rounded-lg p-6"
+            >
+              <h3 className="font-semibold text-white mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate('/learning')}
+                  className="w-full flex items-center gap-3 p-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-white"
+                >
+                  <BookOpen className="w-5 h-5" />
+                  <span>Continue Learning</span>
+                  <ChevronRight className="w-4 h-4 ml-auto" />
+                </button>
+                <button
+                  onClick={() => navigate('/quests')}
+                  className="w-full flex items-center gap-3 p-3 bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-white"
+                >
+                  <Target className="w-5 h-5" />
+                  <span>Browse Quests</span>
+                  <ChevronRight className="w-4 h-4 ml-auto" />
+                </button>
+                <button
+                  onClick={() => navigate('/vault')}
+                  className="w-full flex items-center gap-3 p-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors text-white"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span>Explore Vault</span>
+                  <ChevronRight className="w-4 h-4 ml-auto" />
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Recent Vault Items */}
+            {vaultPreviewData?.data && vaultPreviewData.data.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9 }}
+                className="bg-gray-800 border border-gray-700 rounded-lg p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-white">Recent Discoveries</h3>
+                  <button
+                    onClick={() => navigate('/vault')}
+                    className="text-purple-400 hover:text-purple-300 text-sm"
+                  >
+                    View All
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {vaultPreviewData.data.slice(0, 3).map((item, index) => (
+                    <div
+                      key={item.itemId || index}
+                      className="p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedVaultItem(item);
+                        setShowVaultModal(true);
+                      }}
+                    >
+                      <div className="text-sm font-medium text-white mb-1">
+                        {item.title}
+                      </div>
+                      <div className="text-xs text-gray-400 capitalize">
+                        {item.category?.replace('_', ' ')} • {item.rarity}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
         </div>
-
-        {/* Recommendations */}
-        {renderRecommendations()}
-
-        {/* Vault Reveal Modal */}
-        <VaultRevealModal
-          vaultItem={selectedVaultItem}
-          isOpen={showVaultModal}
-          onClose={() => {
-            setShowVaultModal(false);
-            setSelectedVaultItem(null);
-          }}
-        />
       </div>
+
+      {/* Review Modal */}
+      {renderReviewModal()}
+
+      {/* Vault Modal */}
+      <VaultRevealModal
+        vaultItem={selectedVaultItem}
+        isOpen={showVaultModal}
+        onClose={() => {
+          setShowVaultModal(false);
+          setSelectedVaultItem(null);
+        }}
+      />
     </motion.div>
   );
 };
