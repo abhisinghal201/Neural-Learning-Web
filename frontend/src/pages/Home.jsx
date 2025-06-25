@@ -47,9 +47,10 @@ const Home = () => {
     { refetchInterval: 30000 }
   );
 
+  // FIXED: Use correct API method with date parameter
   const { data: todaySessions } = useQuery(
     'todaySessions',
-    () => api.get('/learning/sessions/today'),
+    () => api.learning.getSessions({ date: new Date().toISOString().split('T')[0] }),
     { refetchInterval: 60000 }
   );
 
@@ -71,9 +72,10 @@ const Home = () => {
     { refetchInterval: 60000 }
   );
 
+  // FIXED: Use correct spaced repetition API method
   const { data: reviewItems } = useQuery(
     'reviewItems',
-    () => api.get('/learning/review'),
+    () => api.learning.getSpacedRepetition(),
     { refetchInterval: 60000 }
   );
 
@@ -83,9 +85,9 @@ const Home = () => {
   const currentPhase = progressData?.data?.profile?.current_phase || 1;
   const currentWeek = progressData?.data?.profile?.current_week || 1;
 
-  // Get today's session info
-  const todayInfo = todaySessions?.data?.summary || {};
-  const recommendedSessionType = todayInfo.recommended_next_type || 'math';
+  // Get today's session info - FIXED: Updated to match new API response structure
+  const todayInfo = todaySessions?.data?.todayStats || {};
+  const recommendedSessionType = todaySessions?.data?.recommendations?.nextSessionType || 'math';
 
   // Format time helper
   const formatTime = (minutes) => {
@@ -97,34 +99,51 @@ const Home = () => {
 
   // Get session type info
   const getSessionTypeInfo = (type) => {
-    const types = {
-      math: { icon: Brain, label: 'Mathematics', color: 'text-blue-400', bg: 'bg-blue-400/10' },
-      coding: { icon: Code, label: 'Coding Practice', color: 'text-green-400', bg: 'bg-green-400/10' },
-      visual_projects: { icon: Eye, label: 'Visual Projects', color: 'text-purple-400', bg: 'bg-purple-400/10' },
-      real_applications: { icon: Target, label: 'Real Applications', color: 'text-orange-400', bg: 'bg-orange-400/10' }
+    const sessionTypes = {
+      math: {
+        label: 'Mathematical Theory',
+        icon: Brain,
+        color: 'text-blue-400',
+        bg: 'bg-blue-500/20'
+      },
+      coding: {
+        label: 'Coding Practice',
+        icon: Code,
+        color: 'text-green-400',
+        bg: 'bg-green-500/20'
+      },
+      visual_projects: {
+        label: 'Visual Projects',
+        icon: Eye,
+        color: 'text-purple-400',
+        bg: 'bg-purple-500/20'
+      },
+      real_applications: {
+        label: 'Real Applications',
+        icon: Target,
+        color: 'text-orange-400',
+        bg: 'bg-orange-500/20'
+      }
     };
-    return types[type] || types.math;
+    return sessionTypes[type] || sessionTypes.math;
   };
 
-  // Handle vault item click
-  const handleVaultItemClick = (item) => {
-    if (item.unlocked) {
-      setSelectedVaultItem(item);
-      setShowVaultModal(true);
-    }
+  // Handle session start
+  const handleStartSession = (sessionType) => {
+    navigate(`/learning/${currentPhase}/${currentWeek}?session=${sessionType}`);
   };
 
-  // Start learning session
-  const handleStartSession = (type) => {
-    navigate(`/learning?session=${type}`);
-  };
-
+  // Loading state
   if (progressLoading) {
     return (
-      <div className="home-page h-full flex items-center justify-center">
-        <div className="flex items-center gap-3 text-blue-400">
-          <Brain className="w-8 h-8 animate-pulse" />
-          <span className="text-xl">Loading your Neural Odyssey...</span>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-gray-400">Loading your neural dashboard...</p>
         </div>
       </div>
     );
@@ -134,88 +153,90 @@ const Home = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="home-page h-full overflow-auto"
+      className="min-h-screen bg-gray-900 text-white p-6"
     >
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Welcome Header */}
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="text-center mb-8"
+          className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Welcome back, <span className="text-blue-400">Neural Explorer</span>
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            Neural Odyssey
           </h1>
           <p className="text-gray-400 text-lg">
-            Continue your journey through the fascinating world of machine learning
+            Your personal machine learning mastery journey
           </p>
         </motion.div>
 
-        {/* Quick Stats */}
+        {/* Stats Cards */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
-          {/* Current Progress */}
-          <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/30 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Map className="w-5 h-5 text-blue-400" />
-              <span className="text-2xl font-bold text-white">
-                {currentPhase}.{currentWeek}
-              </span>
+          {/* Current Streak */}
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">{currentStreak}</p>
+                <p className="text-sm text-gray-400">Day Streak</p>
+              </div>
+              <div className="p-3 bg-orange-500/20 rounded-lg">
+                <Flame className="w-6 h-6 text-orange-400" />
+              </div>
             </div>
-            <h3 className="font-semibold text-white mb-1">Current Progress</h3>
-            <p className="text-blue-400 text-sm">Phase {currentPhase}, Week {currentWeek}</p>
-          </div>
-
-          {/* Study Streak */}
-          <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Flame className="w-5 h-5 text-orange-400" />
-              <span className="text-2xl font-bold text-white">{currentStreak}</span>
-            </div>
-            <h3 className="font-semibold text-white mb-1">Study Streak</h3>
-            <p className="text-orange-400 text-sm">
-              {currentStreak > 0 ? 'Keep it going!' : 'Start your streak today'}
-            </p>
           </div>
 
           {/* Total Study Time */}
-          <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Clock className="w-5 h-5 text-green-400" />
-              <span className="text-2xl font-bold text-white">{formatTime(totalStudyTime)}</span>
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">{formatTime(totalStudyTime)}</p>
+                <p className="text-sm text-gray-400">Total Study</p>
+              </div>
+              <div className="p-3 bg-blue-500/20 rounded-lg">
+                <Clock className="w-6 h-6 text-blue-400" />
+              </div>
             </div>
-            <h3 className="font-semibold text-white mb-1">Total Study Time</h3>
-            <p className="text-green-400 text-sm">Lifetime learning</p>
           </div>
 
-          {/* Vault Unlocks */}
-          <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <Sparkles className="w-5 h-5 text-purple-400" />
-              <span className="text-2xl font-bold text-white">
-                {vaultData?.data?.statistics?.unlocked_items || 0}
-              </span>
+          {/* Current Phase */}
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">Phase {currentPhase}</p>
+                <p className="text-sm text-gray-400">Week {currentWeek}</p>
+              </div>
+              <div className="p-3 bg-green-500/20 rounded-lg">
+                <Map className="w-6 h-6 text-green-400" />
+              </div>
             </div>
-            <h3 className="font-semibold text-white mb-1">Vault Unlocks</h3>
-            <p className="text-purple-400 text-sm">Secrets discovered</p>
+          </div>
+
+          {/* Review Items */}
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {reviewItems?.data?.todayCount || 0}
+                </p>
+                <p className="text-sm text-gray-400">Items to Review</p>
+              </div>
+              <div className="p-3 bg-purple-500/20 rounded-lg">
+                <Brain className="w-6 h-6 text-purple-400" />
+              </div>
+            </div>
           </div>
         </motion.div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Today's Focus */}
-          <motion.div
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="space-y-6"
-          >
-            {/* Today's Recommended Session */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Progress and Sessions */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Today's Focus */}
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -263,9 +284,9 @@ const Home = () => {
                     </motion.button>
                   </div>
                   
-                  {todayInfo.total_time_minutes > 0 && (
+                  {todayInfo.total_time > 0 && (
                     <div className="text-sm text-gray-400">
-                      Already studied {formatTime(todayInfo.total_time_minutes)} today
+                      Already studied {formatTime(todayInfo.total_time)} today
                     </div>
                   )}
                 </div>
@@ -283,8 +304,8 @@ const Home = () => {
                               session.session_type === 'coding' ? 'bg-green-400' :
                               session.session_type === 'visual_projects' ? 'bg-purple-400' : 'bg-orange-400'
                             }`} />
-                            <span className="text-sm text-gray-300 capitalize">
-                              {session.session_type.replace('_', ' ')}
+                            <span className="text-sm text-gray-300">
+                              {getSessionTypeInfo(session.session_type).label}
                             </span>
                           </div>
                           <span className="text-sm text-gray-400">
@@ -298,142 +319,42 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Spaced Repetition Review */}
-            {reviewItems?.data?.review_items && reviewItems.data.review_items.length > 0 && (
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-yellow-400" />
-                    Review Due
-                  </h2>
-                  <span className="bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded-full text-sm font-medium">
-                    {reviewItems.data.review_items.length}
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  {reviewItems.data.review_items.slice(0, 3).map((item, index) => (
-                    <div key={index} className="flex items-center justify-between py-2 px-3 bg-gray-900/30 rounded-lg">
-                      <span className="text-sm text-gray-300">{item.concept_title}</span>
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3 h-3 ${
-                              i < Math.floor(item.difficulty_factor) 
-                                ? 'fill-yellow-400 text-yellow-400' 
-                                : 'text-gray-600'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => navigate('/learning?tab=review')}
-                  className="w-full mt-4 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Zap className="w-4 h-4" />
-                  Start Review Session
-                </button>
-              </div>
-            )}
-
-            {/* Recent Vault Unlocks */}
-            {vaultData?.data?.items && (
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-purple-400" />
-                    Neural Vault
-                  </h2>
+            {/* Progress Visualization */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white">Learning Journey</h2>
+                <div className="flex gap-2">
                   <button
-                    onClick={() => navigate('/vault')}
-                    className="text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1 text-sm"
-                  >
-                    View All
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {Object.values(vaultData.data.items).flat()
-                    .filter(item => item.unlocked)
-                    .slice(0, 3)
-                    .map((item, index) => (
-                      <motion.div
-                        key={index}
-                        whileHover={{ scale: 1.02 }}
-                        onClick={() => handleVaultItemClick(item)}
-                        className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg cursor-pointer hover:bg-gray-900/50 transition-colors"
-                      >
-                        <span className="text-2xl">{item.icon}</span>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-white text-sm">{item.title}</h4>
-                          <p className="text-xs text-gray-400 capitalize">
-                            {item.category.replace('_', ' ')}
-                          </p>
-                        </div>
-                        {item.is_read && (
-                          <Eye className="w-4 h-4 text-green-400" />
-                        )}
-                      </motion.div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Center Column - Main Visualization */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="lg:col-span-2"
-          >
-            <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden">
-              {/* View Toggle */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-700">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setActiveView('dashboard')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                      activeView === 'dashboard' 
-                        ? 'bg-blue-500 text-white' 
-                        : 'text-gray-400 hover:text-white'
+                    onClick={() => setActiveView('progress')}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      activeView === 'progress' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     }`}
                   >
-                    <BarChart3 className="w-4 h-4" />
-                    Progress Map
+                    Progress
                   </button>
                   <button
                     onClick={() => setActiveView('skills')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                       activeView === 'skills' 
-                        ? 'bg-blue-500 text-white' 
-                        : 'text-gray-400 hover:text-white'
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     }`}
                   >
-                    <Award className="w-4 h-4" />
-                    Skill Tree
+                    Skills
                   </button>
                 </div>
-                
-                <button
-                  onClick={() => navigate('/learning')}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
-                >
-                  Continue Learning
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
 
-              {/* Visualization Content */}
               <div className="h-96">
                 <AnimatePresence mode="wait">
-                  {activeView === 'dashboard' && (
+                  {activeView === 'progress' && (
                     <motion.div
                       key="progress"
                       initial={{ opacity: 0, x: -20 }}
@@ -493,7 +414,117 @@ const Home = () => {
                 </div>
               </motion.div>
             )}
-          </motion.div>
+          </div>
+
+          {/* Right Column - Quick Actions and Review */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+            >
+              <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate(`/learning/${currentPhase}/${currentWeek}`)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Continue Learning
+                </button>
+                <button
+                  onClick={() => navigate('/quests')}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  <Target className="w-4 h-4" />
+                  Browse Quests
+                </button>
+                <button
+                  onClick={() => navigate('/vault')}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Explore Vault
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Review Section */}
+            {reviewItems?.data?.reviewItems && reviewItems.data.reviewItems.length > 0 && (
+              <motion.div
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Spaced Review</h3>
+                  <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full">
+                    {reviewItems.data.todayCount} due
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {reviewItems.data.reviewItems.slice(0, 3).map((item, index) => (
+                    <div key={index} className="p-3 bg-gray-700 rounded-lg">
+                      <div className="text-sm font-medium text-white mb-1">
+                        {item.lesson_title || item.concept_id}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {item.lesson_type} • Phase {item.phase}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => navigate('/review')}
+                  className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Start Review Session
+                </button>
+              </motion.div>
+            )}
+
+            {/* Recent Vault Discoveries */}
+            {vaultData?.data?.items && (
+              <motion.div
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">Recent Discoveries</h3>
+                  <button
+                    onClick={() => navigate('/vault')}
+                    className="text-purple-400 hover:text-purple-300 text-sm"
+                  >
+                    View All
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {vaultData.data.slice(0, 3).map((item, index) => (
+                    <div
+                      key={item.itemId || index}
+                      className="p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedVaultItem(item);
+                        setShowVaultModal(true);
+                      }}
+                    >
+                      <div className="text-sm font-medium text-white mb-1">
+                        {item.title}
+                      </div>
+                      <div className="text-xs text-gray-400 capitalize">
+                        {item.category?.replace('_', ' ')} • {item.rarity}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
         </div>
       </div>
 

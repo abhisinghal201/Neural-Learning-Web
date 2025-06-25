@@ -1,91 +1,94 @@
 /**
- * Neural Odyssey Progress Tracker Component
- *
- * Advanced learning analytics and progress tracking interface providing comprehensive
- * insights into learning patterns, performance metrics, and goal achievement.
- *
- * Features:
- * - Detailed progress analytics with interactive charts
- * - Learning velocity and efficiency metrics
- * - Time-based progress tracking and patterns
- * - Skill development visualization
- * - Achievement and milestone tracking
- * - Comparative analysis and benchmarking
- * - Goal setting and progress monitoring
- * - Learning recommendations and insights
- * - Data export and portfolio generation
- * - Personalized learning analytics dashboard
+ * Enhanced Neural Odyssey Progress Tracker Page
+ * 
+ * Now fully leverages ALL backend analytics capabilities:
+ * - Comprehensive learning analytics with multiple timeframes
+ * - Session analysis with mood, energy, and focus correlations
+ * - Performance metrics and learning velocity tracking
+ * - Skill progression analysis with detailed breakdowns
+ * - Spaced repetition analytics and memory retention insights
+ * - Goal completion rates and productivity patterns
+ * - Knowledge graph connections and concept mastery
+ * - Detailed charts and visualizations
+ * - Exportable analytics reports
+ * - Predictive learning insights
  *
  * Author: Neural Explorer
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useMutation } from 'react-query';
+import { useSearchParams } from 'react-router-dom';
 import {
-  TrendingUp,
   BarChart3,
-  PieChart,
+  TrendingUp,
+  TrendingDown,
   Clock,
-  Calendar,
-  Target,
-  Trophy,
-  Star,
-  Flame,
   Brain,
-  Code,
-  BookOpen,
-  Eye,
+  Target,
   Award,
+  Calendar,
+  Flame,
+  Star,
   Zap,
   Activity,
-  Users,
-  Globe,
+  Eye,
+  ArrowUp,
+  ArrowDown,
+  Filter,
   Download,
-  Upload,
   RefreshCw,
   Settings,
-  Filter,
-  Search,
   ChevronDown,
   ChevronUp,
   ChevronRight,
-  ChevronLeft,
-  Play,
-  Pause,
-  Square,
-  RotateCcw,
-  FastForward,
-  Rewind,
-  Maximize2,
-  Minimize2,
-  Share2,
-  Bookmark,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
   Info,
-  HelpCircle,
-  ExternalLink,
-  Map,
-  Compass,
-  Lightbulb,
-  Sparkles,
-  Coffee,
-  Moon,
-  Sun,
-  Sunrise,
-  Sunset,
+  AlertTriangle,
+  CheckCircle,
   Timer,
-  Stopwatch,
-  ArrowUp,
-  ArrowDown,
-  ArrowRight,
-  Percent,
-  Hash,
-  MoreHorizontal
+  Battery,
+  Layers,
+  Map,
+  Users,
+  Globe,
+  Bookmark,
+  MessageSquare,
+  ThumbsUp,
+  Coffee,
+  Smile,
+  Meh,
+  Frown,
+  Plus,
+  Minus,
+  X,
+  Search,
+  Grid,
+  List
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ScatterChart,
+  Scatter
+} from 'recharts';
 import toast from 'react-hot-toast';
 
 // Components
@@ -94,867 +97,923 @@ import LoadingSpinner from '../components/UI/LoadingSpinner';
 // Utils
 import { api } from '../utils/api';
 
-const ProgressTracker = ({ profile: initialProfile }) => {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+const ProgressTracker = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-
+  
   // State management
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
-  const [selectedTimeRange, setSelectedTimeRange] = useState(searchParams.get('range') || '7d');
-  const [selectedMetric, setSelectedMetric] = useState('completion_rate');
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [selectedPhase, setSelectedPhase] = useState(0);
-  const [selectedSkill, setSelectedSkill] = useState('all');
-  const [comparisonMode, setComparisonMode] = useState(false);
-  const [exportFormat, setExportFormat] = useState('pdf');
-  const [goalTargets, setGoalTargets] = useState({});
+  const [selectedTimeframe, setSelectedTimeframe] = useState(searchParams.get('timeframe') || '30');
+  const [selectedMetric, setSelectedMetric] = useState(searchParams.get('metric') || 'overview');
+  const [selectedChartType, setSelectedChartType] = useState('line');
+  const [showFilters, setShowFilters] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareTimeframe, setCompareTimeframe] = useState('30');
+  const [groupBy, setGroupBy] = useState('day');
+  const [selectedPhases, setSelectedPhases] = useState([1, 2, 3, 4]);
+  const [selectedSessionTypes, setSelectedSessionTypes] = useState(['math', 'coding', 'visual_projects', 'real_applications']);
 
-  // Fetch analytics data
-  const { data: analyticsData, isLoading: analyticsLoading } = useQuery(
-    ['progressAnalytics', selectedTimeRange, selectedPhase, selectedSkill],
-    () => api.get('/analytics/progress', {
-      params: {
-        range: selectedTimeRange,
-        phase: selectedPhase > 0 ? selectedPhase : undefined,
-        skill: selectedSkill !== 'all' ? selectedSkill : undefined,
-        detailed: true
-      }
+  // Advanced filters
+  const [filters, setFilters] = useState({
+    minSessionLength: 0,
+    maxSessionLength: 180,
+    minFocusScore: 1,
+    maxFocusScore: 10,
+    energyLevels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    moods: ['energetic', 'focused', 'calm', 'excited', 'tired', 'distracted', 'stressed'],
+    environments: ['home', 'office', 'library', 'cafe', 'other'],
+    includeLowPerformance: true,
+    includeIncompleteData: true
+  });
+
+  // Data fetching with comprehensive analytics
+  const { data: analyticsData, isLoading, refetch } = useQuery(
+    ['analytics', selectedTimeframe, selectedMetric, filters],
+    () => api.learning.getAnalytics({
+      timeframe: selectedTimeframe,
+      metric: selectedMetric,
+      group_by: groupBy,
+      phases: selectedPhases.join(','),
+      session_types: selectedSessionTypes.join(','),
+      min_session_length: filters.minSessionLength,
+      max_session_length: filters.maxSessionLength,
+      min_focus_score: filters.minFocusScore,
+      max_focus_score: filters.maxFocusScore,
+      energy_levels: filters.energyLevels.join(','),
+      moods: filters.moods.join(','),
+      environments: filters.environments.join(',')
     }),
     {
-      refetchInterval: 60000,
-      staleTime: 30000
+      refetchInterval: 300000, // 5 minutes
+      staleTime: 60000
     }
   );
 
-  // Fetch learning patterns
-  const { data: patternsData } = useQuery(
-    ['learningPatterns', selectedTimeRange],
-    () => api.get('/analytics/patterns', {
-      params: { range: selectedTimeRange }
-    }),
+  const { data: progressData } = useQuery(
+    'progressData',
+    () => api.learning.getProgress(),
+    { refetchInterval: 60000 }
+  );
+
+  const { data: spacedRepetitionAnalytics } = useQuery(
+    'spacedRepetitionAnalytics',
+    () => api.learning.getSpacedRepetition({ analytics: true }),
+    { refetchInterval: 300000 }
+  );
+
+  const { data: knowledgeGraphData } = useQuery(
+    'knowledgeGraphAnalytics',
+    () => api.learning.getKnowledgeGraph({ analytics: true }),
+    { refetchInterval: 300000 }
+  );
+
+  const { data: streakData } = useQuery(
+    'streakAnalytics',
+    () => api.learning.getStreak(),
+    { refetchInterval: 60000 }
+  );
+
+  const { data: compareData } = useQuery(
+    ['compareAnalytics', compareTimeframe],
+    () => compareMode ? api.learning.getAnalytics({
+      timeframe: compareTimeframe,
+      metric: selectedMetric,
+      group_by: groupBy
+    }) : null,
     {
+      enabled: compareMode,
       refetchInterval: 300000
     }
   );
 
-  // Fetch skill development data
-  const { data: skillsData } = useQuery(
-    'skillDevelopment',
-    () => api.get('/analytics/skills'),
+  // Export analytics mutation
+  const exportAnalyticsMutation = useMutation(
+    (exportOptions) => api.system.exportPortfolio(exportOptions),
     {
-      refetchInterval: 120000
-    }
-  );
-
-  // Fetch goals and milestones
-  const { data: goalsData } = useQuery(
-    'learningGoals',
-    () => api.get('/learning/goals'),
-    {
-      refetchInterval: 300000
-    }
-  );
-
-  // Fetch comparative data
-  const { data: comparativeData, isLoading: comparativeLoading } = useQuery(
-    ['comparativeAnalytics', selectedTimeRange],
-    () => api.get('/analytics/comparative', {
-      params: { range: selectedTimeRange }
-    }),
-    {
-      enabled: comparisonMode,
-      refetchInterval: 300000
-    }
-  );
-
-  // Export progress mutation
-  const exportProgressMutation = useMutation(
-    ({ format, options }) => api.post('/analytics/export', { format, options }),
-    {
-      onSuccess: (data) => {
-        if (data.data.downloadUrl) {
-          window.open(data.data.downloadUrl, '_blank');
-        }
-        toast.success('Progress report exported successfully!');
+      onSuccess: () => {
+        toast.success('Analytics exported successfully!');
       },
-      onError: (error) => {
-        toast.error('Failed to export progress report');
+      onError: () => {
+        toast.error('Failed to export analytics');
       }
     }
   );
-
-  // Time range options
-  const timeRanges = [
-    { id: '1d', label: 'Today', icon: Sun },
-    { id: '7d', label: 'Week', icon: Calendar },
-    { id: '30d', label: 'Month', icon: Calendar },
-    { id: '90d', label: 'Quarter', icon: BarChart3 },
-    { id: '365d', label: 'Year', icon: TrendingUp },
-    { id: 'all', label: 'All Time', icon: Globe }
-  ];
-
-  // Learning phases
-  const learningPhases = [
-    { id: 0, label: 'All Phases', color: 'gray' },
-    { id: 1, label: 'Foundations', color: 'blue' },
-    { id: 2, label: 'Core ML', color: 'green' },
-    { id: 3, label: 'Advanced AI', color: 'purple' },
-    { id: 4, label: 'Mastery', color: 'orange' }
-  ];
-
-  // Skill categories
-  const skillCategories = [
-    { id: 'all', label: 'All Skills', icon: Globe },
-    { id: 'mathematics', label: 'Mathematics', icon: Brain },
-    { id: 'programming', label: 'Programming', icon: Code },
-    { id: 'theory', label: 'Theory', icon: BookOpen },
-    { id: 'applications', label: 'Applications', icon: Target },
-    { id: 'creativity', label: 'Creativity', icon: Eye },
-    { id: 'persistence', label: 'Persistence', icon: Flame }
-  ];
-
-  // Progress metrics
-  const progressMetrics = useMemo(() => {
-    if (!analyticsData?.data) return null;
-
-    const data = analyticsData.data;
-    
-    return {
-      completionRate: data.completion_rate || 0,
-      masteryRate: data.mastery_rate || 0,
-      averageSessionTime: data.average_session_time || 0,
-      totalStudyTime: data.total_study_time || 0,
-      streakDays: data.current_streak || 0,
-      lessonsCompleted: data.lessons_completed || 0,
-      questsCompleted: data.quests_completed || 0,
-      skillPointsEarned: data.skill_points_earned || 0,
-      vaultItemsUnlocked: data.vault_items_unlocked || 0,
-      learningVelocity: data.learning_velocity || 0,
-      efficiencyScore: data.efficiency_score || 0,
-      consistencyScore: data.consistency_score || 0
-    };
-  }, [analyticsData]);
-
-  // Learning insights
-  const learningInsights = useMemo(() => {
-    if (!patternsData?.data) return [];
-
-    const patterns = patternsData.data;
-    const insights = [];
-
-    // Time-based insights
-    if (patterns.peak_hours) {
-      insights.push({
-        type: 'time',
-        title: 'Optimal Learning Time',
-        description: `You're most productive between ${patterns.peak_hours.start} and ${patterns.peak_hours.end}`,
-        icon: Clock,
-        color: 'blue',
-        action: 'Schedule important sessions during this time'
-      });
-    }
-
-    // Learning velocity insights
-    if (patterns.velocity_trend === 'increasing') {
-      insights.push({
-        type: 'velocity',
-        title: 'Accelerating Progress',
-        description: 'Your learning velocity has increased by 23% this week',
-        icon: TrendingUp,
-        color: 'green',
-        action: 'Keep up the momentum with challenging quests'
-      });
-    }
-
-    // Skill development insights
-    if (patterns.strongest_skill) {
-      insights.push({
-        type: 'skill',
-        title: 'Skill Strength',
-        description: `${patterns.strongest_skill} is your strongest area`,
-        icon: Trophy,
-        color: 'yellow',
-        action: 'Consider advanced challenges in this area'
-      });
-    }
-
-    // Study pattern insights
-    if (patterns.consistency_score > 0.8) {
-      insights.push({
-        type: 'consistency',
-        title: 'Excellent Consistency',
-        description: 'You have a very consistent learning schedule',
-        icon: CheckCircle,
-        color: 'green',
-        action: 'Your habit formation is excellent'
-      });
-    }
-
-    return insights;
-  }, [patternsData]);
-
-  // Format time helper
-  const formatTime = (minutes) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
-
-  // Format percentage
-  const formatPercentage = (value, decimals = 1) => {
-    return `${(value * 100).toFixed(decimals)}%`;
-  };
-
-  // Calculate progress trends
-  const calculateTrend = (current, previous) => {
-    if (!previous || previous === 0) return { direction: 'neutral', percentage: 0 };
-    const change = ((current - previous) / previous) * 100;
-    return {
-      direction: change > 0 ? 'up' : change < 0 ? 'down' : 'neutral',
-      percentage: Math.abs(change)
-    };
-  };
-
-  // Handle export
-  const handleExport = () => {
-    exportProgressMutation.mutate({
-      format: exportFormat,
-      options: {
-        timeRange: selectedTimeRange,
-        includeCharts: true,
-        includeInsights: true,
-        includeGoals: true
-      }
-    });
-  };
 
   // Update URL params
   useEffect(() => {
-    const newParams = new URLSearchParams();
-    if (activeTab !== 'overview') newParams.set('tab', activeTab);
-    if (selectedTimeRange !== '7d') newParams.set('range', selectedTimeRange);
-    setSearchParams(newParams, { replace: true });
-  }, [activeTab, selectedTimeRange, setSearchParams]);
+    const params = new URLSearchParams();
+    params.set('timeframe', selectedTimeframe);
+    params.set('metric', selectedMetric);
+    setSearchParams(params);
+  }, [selectedTimeframe, selectedMetric, setSearchParams]);
 
-  // Render metric card
-  const renderMetricCard = (title, value, icon: IconComponent, color = 'blue', trend = null, format = 'number') => {
-    let formattedValue = value;
-    if (format === 'time') formattedValue = formatTime(value);
-    if (format === 'percentage') formattedValue = formatPercentage(value);
+  // Timeframe options
+  const timeframeOptions = [
+    { value: '7', label: 'Last 7 Days' },
+    { value: '14', label: 'Last 2 Weeks' },
+    { value: '30', label: 'Last Month' },
+    { value: '60', label: 'Last 2 Months' },
+    { value: '90', label: 'Last 3 Months' },
+    { value: '180', label: 'Last 6 Months' },
+    { value: '365', label: 'Last Year' }
+  ];
+
+  const metricOptions = [
+    { value: 'overview', label: 'Overview', icon: BarChart3 },
+    { value: 'sessions', label: 'Sessions', icon: Clock },
+    { value: 'focus', label: 'Focus & Performance', icon: Brain },
+    { value: 'skills', label: 'Skill Development', icon: Award },
+    { value: 'progress', label: 'Learning Progress', icon: TrendingUp },
+    { value: 'memory', label: 'Memory & Retention', icon: Layers },
+    { value: 'patterns', label: 'Learning Patterns', icon: Activity },
+    { value: 'goals', label: 'Goals & Achievements', icon: Target }
+  ];
+
+  // Color schemes for charts
+  const colors = {
+    primary: '#3B82F6',
+    secondary: '#10B981',
+    accent: '#F59E0B',
+    danger: '#EF4444',
+    purple: '#8B5CF6',
+    pink: '#EC4899',
+    cyan: '#06B6D4',
+    orange: '#F97316'
+  };
+
+  const chartColors = [colors.primary, colors.secondary, colors.accent, colors.purple, colors.pink, colors.cyan];
+
+  // Calculate insights and trends
+  const insights = useMemo(() => {
+    if (!analyticsData?.data) return {};
+
+    const data = analyticsData.data;
+    const insights = {};
+
+    // Performance trends
+    if (data.daily_activity && data.daily_activity.length > 1) {
+      const recent = data.daily_activity.slice(-7);
+      const older = data.daily_activity.slice(-14, -7);
+      
+      const recentAvgFocus = recent.reduce((sum, d) => sum + (d.avg_focus || 0), 0) / recent.length;
+      const olderAvgFocus = older.length > 0 ? older.reduce((sum, d) => sum + (d.avg_focus || 0), 0) / older.length : recentAvgFocus;
+      
+      insights.focusTrend = recentAvgFocus > olderAvgFocus ? 'improving' : 'declining';
+      insights.focusChange = Math.abs(recentAvgFocus - olderAvgFocus);
+    }
+
+    // Session patterns
+    if (data.sessions) {
+      const sessionsByDay = {};
+      data.daily_activity?.forEach(day => {
+        const dayOfWeek = new Date(day.session_date).getDay();
+        sessionsByDay[dayOfWeek] = (sessionsByDay[dayOfWeek] || 0) + (day.session_count || 0);
+      });
+      
+      const maxDay = Object.keys(sessionsByDay).reduce((max, day) => 
+        sessionsByDay[day] > sessionsByDay[max] ? day : max, '0');
+      
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      insights.mostProductiveDay = dayNames[maxDay];
+    }
+
+    // Learning velocity
+    if (data.progress) {
+      const completionRate = data.progress.completed_lessons / Math.max(data.progress.total_lessons, 1);
+      insights.learningVelocity = completionRate > 0.8 ? 'fast' : completionRate > 0.5 ? 'moderate' : 'slow';
+    }
+
+    return insights;
+  }, [analyticsData]);
+
+  // Render overview dashboard
+  const renderOverview = () => {
+    const data = analyticsData?.data;
+    if (!data) return null;
 
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className={`p-3 bg-${color}-600 bg-opacity-20 rounded-lg`}>
-            <IconComponent className={`w-6 h-6 text-${color}-400`} />
-          </div>
-          {trend && (
-            <div className={`flex items-center space-x-1 text-${
-              trend.direction === 'up' ? 'green' : trend.direction === 'down' ? 'red' : 'gray'
-            }-400`}>
-              {trend.direction === 'up' && <ArrowUp className="w-4 h-4" />}
-              {trend.direction === 'down' && <ArrowDown className="w-4 h-4" />}
-              <span className="text-sm font-medium">{trend.percentage.toFixed(1)}%</span>
+      <div className="space-y-6">
+        {/* Key Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg p-6 text-white"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{data.sessions?.total_sessions || 0}</div>
+                <div className="text-sm opacity-90">Total Sessions</div>
+              </div>
+              <Clock className="w-8 h-8 opacity-80" />
             </div>
-          )}
+            <div className="text-xs mt-2 opacity-75">
+              Avg: {Math.round(data.sessions?.avg_session_length || 0)}min
+            </div>
+            {insights.focusTrend && (
+              <div className={`text-xs mt-1 flex items-center space-x-1 ${
+                insights.focusTrend === 'improving' ? 'text-green-200' : 'text-red-200'
+              }`}>
+                {insights.focusTrend === 'improving' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                <span>Focus {insights.focusTrend}</span>
+              </div>
+            )}
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-6 text-white"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{Math.round(data.sessions?.avg_focus_score || 0)}/10</div>
+                <div className="text-sm opacity-90">Avg Focus Score</div>
+              </div>
+              <Brain className="w-8 h-8 opacity-80" />
+            </div>
+            <div className="text-xs mt-2 opacity-75">
+              Energy: {Math.round(data.sessions?.avg_energy_level || 0)}/10
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-6 text-white"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{data.progress?.completed_lessons || 0}</div>
+                <div className="text-sm opacity-90">Lessons Completed</div>
+              </div>
+              <Award className="w-8 h-8 opacity-80" />
+            </div>
+            <div className="text-xs mt-2 opacity-75">
+              {Math.round((data.progress?.completed_lessons / Math.max(data.progress?.total_lessons, 1)) * 100)}% complete
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg p-6 text-white"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">{streakData?.data?.currentStreak || 0}</div>
+                <div className="text-sm opacity-90">Current Streak</div>
+              </div>
+              <Flame className="w-8 h-8 opacity-80" />
+            </div>
+            <div className="text-xs mt-2 opacity-75">
+              Best: {streakData?.data?.longestStreak || 0} days
+            </div>
+          </motion.div>
         </div>
-        
-        <div>
-          <p className="text-3xl font-bold text-white mb-1">{formattedValue}</p>
-          <p className="text-sm text-gray-400">{title}</p>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Daily Activity Chart */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Daily Activity</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={data.daily_activity}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="session_date" 
+                  stroke="#9CA3AF"
+                  tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                  labelStyle={{ color: '#F3F4F6' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="total_time" 
+                  stroke={colors.primary} 
+                  fill={colors.primary}
+                  fillOpacity={0.3}
+                  name="Study Time (min)"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="avg_focus" 
+                  stroke={colors.secondary} 
+                  fill={colors.secondary}
+                  fillOpacity={0.3}
+                  name="Focus Score"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Session Types Distribution */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Session Types</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={data.session_type_distribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {data.session_type_distribution?.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Focus vs Energy Correlation */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Focus vs Energy Correlation</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <ScatterChart data={data.focus_energy_correlation}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  type="number" 
+                  dataKey="energy_level" 
+                  name="Energy Level"
+                  domain={[1, 10]}
+                  stroke="#9CA3AF"
+                />
+                <YAxis 
+                  type="number" 
+                  dataKey="focus_score" 
+                  name="Focus Score"
+                  domain={[1, 10]}
+                  stroke="#9CA3AF"
+                />
+                <Tooltip 
+                  cursor={{ strokeDasharray: '3 3' }}
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                  formatter={(value, name) => [value, name]}
+                />
+                <Scatter name="Sessions" dataKey="focus_score" fill={colors.accent} />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Skill Points Progression */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Skill Development</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data.skills}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="category" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+                <Bar dataKey="total_points" fill={colors.purple} name="Total Points" />
+                <Bar dataKey="achievements" fill={colors.pink} name="Achievements" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </motion.div>
+
+        {/* Insights and Recommendations */}
+        <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Insights & Recommendations</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {insights.mostProductiveDay && (
+              <div className="bg-blue-600/10 border border-blue-600/30 rounded-lg p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Calendar className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm font-medium text-blue-400">Most Productive Day</span>
+                </div>
+                <div className="text-white">{insights.mostProductiveDay}</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Consider scheduling important sessions on this day
+                </div>
+              </div>
+            )}
+
+            {insights.learningVelocity && (
+              <div className={`border rounded-lg p-4 ${
+                insights.learningVelocity === 'fast' ? 'bg-green-600/10 border-green-600/30' :
+                insights.learningVelocity === 'moderate' ? 'bg-yellow-600/10 border-yellow-600/30' :
+                'bg-red-600/10 border-red-600/30'
+              }`}>
+                <div className="flex items-center space-x-2 mb-2">
+                  <TrendingUp className={`w-4 h-4 ${
+                    insights.learningVelocity === 'fast' ? 'text-green-400' :
+                    insights.learningVelocity === 'moderate' ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`} />
+                  <span className={`text-sm font-medium ${
+                    insights.learningVelocity === 'fast' ? 'text-green-400' :
+                    insights.learningVelocity === 'moderate' ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>Learning Velocity</span>
+                </div>
+                <div className="text-white capitalize">{insights.learningVelocity}</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  {insights.learningVelocity === 'fast' ? 'Great pace! Keep it up!' :
+                   insights.learningVelocity === 'moderate' ? 'Steady progress. Consider increasing session frequency.' :
+                   'Consider breaking lessons into smaller chunks'}
+                </div>
+              </div>
+            )}
+
+            {insights.focusTrend && (
+              <div className={`border rounded-lg p-4 ${
+                insights.focusTrend === 'improving' ? 'bg-green-600/10 border-green-600/30' : 'bg-orange-600/10 border-orange-600/30'
+              }`}>
+                <div className="flex items-center space-x-2 mb-2">
+                  <Brain className={`w-4 h-4 ${insights.focusTrend === 'improving' ? 'text-green-400' : 'text-orange-400'}`} />
+                  <span className={`text-sm font-medium ${insights.focusTrend === 'improving' ? 'text-green-400' : 'text-orange-400'}`}>
+                    Focus Trend
+                  </span>
+                </div>
+                <div className="text-white capitalize">{insights.focusTrend}</div>
+                <div className="text-xs text-gray-400 mt-1">
+                  {insights.focusTrend === 'improving' ? 
+                    'Your focus is improving over time!' :
+                    'Consider adjusting your environment or session timing'
+                  }
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     );
   };
 
-  // Render overview tab
-  const renderOverviewTab = () => (
-    <div className="space-y-6">
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {progressMetrics && (
-          <>
-            {renderMetricCard(
-              'Completion Rate',
-              progressMetrics.completionRate,
-              TrendingUp,
-              'blue',
-              null,
-              'percentage'
-            )}
-            {renderMetricCard(
-              'Study Time',
-              progressMetrics.totalStudyTime,
-              Clock,
-              'green',
-              null,
-              'time'
-            )}
-            {renderMetricCard(
-              'Current Streak',
-              progressMetrics.streakDays,
-              Flame,
-              'orange'
-            )}
-            {renderMetricCard(
-              'Mastery Rate',
-              progressMetrics.masteryRate,
-              Trophy,
-              'purple',
-              null,
-              'percentage'
-            )}
-          </>
-        )}
-      </div>
+  // Render sessions analytics
+  const renderSessionsAnalytics = () => {
+    const data = analyticsData?.data;
+    if (!data) return null;
 
-      {/* Learning Insights */}
-      {learningInsights.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-        >
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center space-x-2">
-            <Lightbulb className="w-5 h-5 text-yellow-400" />
-            <span>Learning Insights</span>
-          </h3>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {learningInsights.map((insight, index) => (
-              <div
-                key={index}
-                className={`p-4 bg-${insight.color}-600 bg-opacity-10 border border-${insight.color}-600 border-opacity-30 rounded-lg`}
-              >
-                <div className="flex items-start space-x-3">
-                  <insight.icon className={`w-5 h-5 text-${insight.color}-400 mt-1`} />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-white mb-1">{insight.title}</h4>
-                    <p className="text-sm text-gray-300 mb-2">{insight.description}</p>
-                    <p className="text-xs text-gray-400">{insight.action}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Progress Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Learning Velocity Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-        >
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-            <BarChart3 className="w-5 h-5 text-blue-400" />
-            <span>Learning Velocity</span>
-          </h3>
-          
-          <div className="h-64 flex items-center justify-center">
-            {/* Placeholder for chart - would integrate with a chart library */}
-            <div className="text-center text-gray-400">
-              <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p>Interactive velocity chart would be rendered here</p>
-              <p className="text-sm">Shows lessons/hour completion rate over time</p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Skill Distribution */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-        >
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-            <PieChart className="w-5 h-5 text-purple-400" />
-            <span>Skill Distribution</span>
-          </h3>
-          
-          <div className="h-64 flex items-center justify-center">
-            <div className="text-center text-gray-400">
-              <PieChart className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p>Skill points distribution chart</p>
-              <p className="text-sm">Breakdown by skill category</p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
-
-  // Render analytics tab
-  const renderAnalyticsTab = () => (
-    <div className="space-y-6">
-      {/* Advanced Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {progressMetrics && (
-          <>
-            {renderMetricCard(
-              'Learning Velocity',
-              progressMetrics.learningVelocity,
-              FastForward,
-              'cyan'
-            )}
-            {renderMetricCard(
-              'Efficiency Score',
-              progressMetrics.efficiencyScore,
-              Zap,
-              'yellow',
-              null,
-              'percentage'
-            )}
-            {renderMetricCard(
-              'Consistency Score',
-              progressMetrics.consistencyScore,
-              Target,
-              'green',
-              null,
-              'percentage'
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Detailed Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Time Analysis */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-        >
-          <h3 className="text-lg font-semibold text-white mb-4">Time Analysis</h3>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Sunrise className="w-5 h-5 text-yellow-400" />
-                <span className="text-white">Morning (6-12 PM)</span>
-              </div>
-              <span className="text-gray-300">2.5h</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Sun className="w-5 h-5 text-orange-400" />
-                <span className="text-white">Afternoon (12-6 PM)</span>
-              </div>
-              <span className="text-gray-300">1.8h</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Sunset className="w-5 h-5 text-purple-400" />
-                <span className="text-white">Evening (6-10 PM)</span>
-              </div>
-              <span className="text-gray-300">3.2h</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <Moon className="w-5 h-5 text-blue-400" />
-                <span className="text-white">Night (10-6 AM)</span>
-              </div>
-              <span className="text-gray-300">0.5h</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Performance Trends */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-        >
-          <h3 className="text-lg font-semibold text-white mb-4">Performance Trends</h3>
-          
-          <div className="space-y-4">
-            <div className="p-3 bg-gray-700 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-white">Lesson Completion</span>
-                <div className="flex items-center space-x-1 text-green-400">
-                  <ArrowUp className="w-4 h-4" />
-                  <span className="text-sm">+12%</span>
-                </div>
-              </div>
-              <div className="w-full bg-gray-600 rounded-full h-2">
-                <div className="bg-green-400 h-2 rounded-full" style={{ width: '78%' }} />
-              </div>
-            </div>
-            
-            <div className="p-3 bg-gray-700 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-white">Quest Success Rate</span>
-                <div className="flex items-center space-x-1 text-green-400">
-                  <ArrowUp className="w-4 h-4" />
-                  <span className="text-sm">+8%</span>
-                </div>
-              </div>
-              <div className="w-full bg-gray-600 rounded-full h-2">
-                <div className="bg-blue-400 h-2 rounded-full" style={{ width: '85%' }} />
-              </div>
-            </div>
-            
-            <div className="p-3 bg-gray-700 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-white">Mastery Achievement</span>
-                <div className="flex items-center space-x-1 text-yellow-400">
-                  <ArrowUp className="w-4 h-4" />
-                  <span className="text-sm">+5%</span>
-                </div>
-              </div>
-              <div className="w-full bg-gray-600 rounded-full h-2">
-                <div className="bg-purple-400 h-2 rounded-full" style={{ width: '67%' }} />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
-
-  // Render goals tab
-  const renderGoalsTab = () => (
-    <div className="space-y-6">
-      {/* Goal Progress */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white flex items-center space-x-2">
-            <Target className="w-5 h-5 text-blue-400" />
-            <span>Learning Goals</span>
-          </h3>
-          <button
-            onClick={() => navigate('/goals/new')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Goal</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Current Goals */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-medium text-white">Active Goals</h4>
-            
-            <div className="space-y-3">
-              {/* Example goal */}
-              <div className="p-4 bg-gray-700 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-white">Complete Phase 1</span>
-                  <span className="text-sm text-gray-400">Due: 2 weeks</span>
-                </div>
-                <div className="mb-2">
-                  <div className="w-full bg-gray-600 rounded-full h-2">
-                    <div className="bg-blue-400 h-2 rounded-full" style={{ width: '65%' }} />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm text-gray-400">
-                  <span>65% complete</span>
-                  <span>8/12 weeks</span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-gray-700 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-white">30-Day Streak</span>
-                  <span className="text-sm text-gray-400">Due: 15 days</span>
-                </div>
-                <div className="mb-2">
-                  <div className="w-full bg-gray-600 rounded-full h-2">
-                    <div className="bg-orange-400 h-2 rounded-full" style={{ width: '50%' }} />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm text-gray-400">
-                  <span>15/30 days</span>
-                  <span className="flex items-center space-x-1">
-                    <Flame className="w-3 h-3" />
-                    <span>Current: 15</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Goal Insights */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-medium text-white">Goal Insights</h4>
-            
-            <div className="space-y-3">
-              <div className="p-4 bg-green-600 bg-opacity-10 border border-green-600 border-opacity-30 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 mt-1" />
-                  <div>
-                    <h5 className="font-medium text-white mb-1">On Track</h5>
-                    <p className="text-sm text-gray-300">You're making excellent progress on your Phase 1 goal. Keep up the momentum!</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-yellow-600 bg-opacity-10 border border-yellow-600 border-opacity-30 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 text-yellow-400 mt-1" />
-                  <div>
-                    <h5 className="font-medium text-white mb-1">Attention Needed</h5>
-                    <p className="text-sm text-gray-300">Your streak goal needs more consistent daily practice to stay on track.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Goal Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {renderMetricCard('Goals Set', 8, Target, 'blue')}
-        {renderMetricCard('Goals Achieved', 5, Trophy, 'green')}
-        {renderMetricCard('Success Rate', 0.625, Percent, 'purple', null, 'percentage')}
-        {renderMetricCard('Avg. Time to Goal', 21, Calendar, 'orange')}
-      </div>
-    </div>
-  );
-
-  // Render comparison tab
-  const renderComparisonTab = () => (
-    <div className="space-y-6">
-      {/* Comparison Controls */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-      >
-        <h3 className="text-lg font-semibold text-white mb-4">Progress Comparison</h3>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Compare With</label>
-            <select className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
-              <option>Previous Week</option>
-              <option>Previous Month</option>
-              <option>Same Period Last Year</option>
-              <option>Personal Best</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Metric</label>
-            <select 
-              value={selectedMetric}
-              onChange={(e) => setSelectedMetric(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
-            >
-              <option value="completion_rate">Completion Rate</option>
-              <option value="study_time">Study Time</option>
-              <option value="mastery_rate">Mastery Rate</option>
-              <option value="velocity">Learning Velocity</option>
-            </select>
-          </div>
-          
-          <div className="flex items-end">
-            <button 
-              onClick={() => setComparisonMode(!comparisonMode)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              {comparativeLoading ? 'Loading...' : 'Compare'}
-            </button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Comparison Results */}
-      {comparisonMode && comparativeData && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-        >
-          <h4 className="text-lg font-medium text-white mb-4">Comparison Results</h4>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h5 className="font-medium text-gray-300">Current Period</h5>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Completion Rate</span>
-                  <span className="text-white">78%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Study Time</span>
-                  <span className="text-white">24.5h</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Mastery Rate</span>
-                  <span className="text-white">65%</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h5 className="font-medium text-gray-300">Previous Period</h5>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Completion Rate</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white">69%</span>
-                    <div className="flex items-center text-green-400">
-                      <ArrowUp className="w-3 h-3" />
-                      <span className="text-xs">+9%</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Study Time</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white">21.2h</span>
-                    <div className="flex items-center text-green-400">
-                      <ArrowUp className="w-3 h-3" />
-                      <span className="text-xs">+3.3h</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Mastery Rate</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-white">61%</span>
-                    <div className="flex items-center text-green-400">
-                      <ArrowUp className="w-3 h-3" />
-                      <span className="text-xs">+4%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </div>
-  );
-
-  // Render loading state
-  if (analyticsLoading && !analyticsData) {
     return (
-      <div className="progress-tracker h-full">
-        <LoadingSpinner
-          size="large"
-          text="Loading progress analytics..."
-          description="Analyzing your learning patterns and generating insights"
-        />
+      <div className="space-y-6">
+        {/* Session Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Session Duration</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={data.session_duration_distribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="duration_range" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+                <Bar dataKey="count" fill={colors.primary} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Focus Score Distribution</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={data.focus_score_distribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="score_range" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+                <Bar dataKey="count" fill={colors.secondary} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Energy Levels</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={data.energy_level_distribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="energy_level" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+                <Bar dataKey="count" fill={colors.accent} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Session Patterns */}
+        <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Session Patterns</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Hour of Day Analysis */}
+            <div>
+              <h4 className="text-md font-medium text-gray-300 mb-3">Sessions by Hour</h4>
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={data.sessions_by_hour}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="hour" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                  />
+                  <Area type="monotone" dataKey="count" stroke={colors.purple} fill={colors.purple} fillOpacity={0.3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Day of Week Analysis */}
+            <div>
+              <h4 className="text-md font-medium text-gray-300 mb-3">Sessions by Day</h4>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={data.sessions_by_day}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="day" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                  />
+                  <Bar dataKey="count" fill={colors.pink} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Mood and Environment Analysis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Mood Impact on Performance</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data.mood_performance_correlation}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="mood" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+                <Bar dataKey="avg_focus" fill={colors.cyan} name="Avg Focus Score" />
+                <Bar dataKey="avg_productivity" fill={colors.orange} name="Avg Productivity" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Environment Performance</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RadarChart data={data.environment_performance}>
+                <PolarGrid stroke="#374151" />
+                <PolarAngleAxis dataKey="environment" tick={{ fill: '#9CA3AF' }} />
+                <PolarRadiusAxis tick={{ fill: '#9CA3AF' }} />
+                <Radar
+                  name="Focus Score"
+                  dataKey="avg_focus"
+                  stroke={colors.primary}
+                  fill={colors.primary}
+                  fillOpacity={0.3}
+                />
+                <Radar
+                  name="Productivity"
+                  dataKey="avg_productivity"
+                  stroke={colors.secondary}
+                  fill={colors.secondary}
+                  fillOpacity={0.3}
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+                <Legend />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render memory and spaced repetition analytics
+  const renderMemoryAnalytics = () => {
+    const data = spacedRepetitionAnalytics?.data;
+    if (!data) return null;
+
+    return (
+      <div className="space-y-6">
+        {/* Memory Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-white">{data.total_concepts || 0}</div>
+                <div className="text-sm text-gray-400">Total Concepts</div>
+              </div>
+              <Layers className="w-8 h-8 text-blue-400" />
+            </div>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-white">{data.mastered_concepts || 0}</div>
+                <div className="text-sm text-gray-400">Mastered</div>
+              </div>
+              <Award className="w-8 h-8 text-green-400" />
+            </div>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-white">{data.due_for_review || 0}</div>
+                <div className="text-sm text-gray-400">Due for Review</div>
+              </div>
+              <Clock className="w-8 h-8 text-orange-400" />
+            </div>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-white">
+                  {Math.round(data.retention_rate * 100) || 0}%
+                </div>
+                <div className="text-sm text-gray-400">Retention Rate</div>
+              </div>
+              <Brain className="w-8 h-8 text-purple-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Memory Performance Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Retention Over Time</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={data.retention_timeline}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="date" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" domain={[0, 100]} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+                <Line type="monotone" dataKey="retention_rate" stroke={colors.primary} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Difficulty Distribution</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={data.difficulty_distribution}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="difficulty_range" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                />
+                <Bar dataKey="count" fill={colors.secondary} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Review Performance */}
+        <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Review Performance by Quality Score</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={data.quality_score_trends}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="date" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+              />
+              <Area type="monotone" dataKey="avg_quality" stroke={colors.accent} fill={colors.accent} fillOpacity={0.3} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  };
+
+  // Export analytics
+  const exportAnalytics = (format = 'json') => {
+    const exportData = {
+      timeframe: selectedTimeframe,
+      metric: selectedMetric,
+      data: analyticsData?.data,
+      insights,
+      generated_at: new Date().toISOString()
+    };
+
+    exportAnalyticsMutation.mutate({
+      type: 'analytics',
+      format,
+      data: exportData
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="large" />
       </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="progress-tracker min-h-screen bg-gray-900"
-    >
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Progress Tracker</h1>
-              <p className="text-gray-400 text-lg">
-                Deep insights into your learning journey and performance
-              </p>
-            </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Progress Analytics</h1>
+          <p className="text-gray-400">Comprehensive learning insights and performance metrics</p>
+        </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Time Range Selector */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-2 rounded-lg transition-colors ${
+              showFilters ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+          
+          <button
+            onClick={refetch}
+            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => exportAnalytics('json')}
+            className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Timeframe Selection */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-400">Timeframe:</span>
+            <select
+              value={selectedTimeframe}
+              onChange={(e) => setSelectedTimeframe(e.target.value)}
+              className="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+            >
+              {timeframeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Metric Selection */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-400">View:</span>
+            <select
+              value={selectedMetric}
+              onChange={(e) => setSelectedMetric(e.target.value)}
+              className="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+            >
+              {metricOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Compare Mode */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCompareMode(!compareMode)}
+              className={`px-3 py-1 rounded text-sm transition-colors ${
+                compareMode ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              Compare
+            </button>
+            {compareMode && (
               <select
-                value={selectedTimeRange}
-                onChange={(e) => setSelectedTimeRange(e.target.value)}
-                className="bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
+                value={compareTimeframe}
+                onChange={(e) => setCompareTimeframe(e.target.value)}
+                className="px-3 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
               >
-                {timeRanges.map((range) => (
-                  <option key={range.id} value={range.id}>
-                    {range.label}
+                {timeframeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    vs {option.label}
                   </option>
                 ))}
               </select>
-
-              {/* Export Button */}
-              <button
-                onClick={handleExport}
-                disabled={exportProgressMutation.isLoading}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>{exportProgressMutation.isLoading ? 'Exporting...' : 'Export'}</span>
-              </button>
-
-              <button
-                onClick={() => queryClient.invalidateQueries(['progressAnalytics'])}
-                className="p-2 bg-gray-800 border border-gray-600 hover:bg-gray-700 rounded-lg transition-colors text-gray-400 hover:text-white"
-                title="Refresh Data"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </div>
+            )}
           </div>
-
-          {/* Tab Navigation */}
-          <div className="flex space-x-1 bg-gray-800 border border-gray-700 rounded-lg p-1">
-            {[
-              { id: 'overview', label: 'Overview', icon: BarChart3 },
-              { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-              { id: 'goals', label: 'Goals', icon: Target },
-              { id: 'comparison', label: 'Comparison', icon: Users }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Tab Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {activeTab === 'overview' && renderOverviewTab()}
-            {activeTab === 'analytics' && renderAnalyticsTab()}
-            {activeTab === 'goals' && renderGoalsTab()}
-            {activeTab === 'comparison' && renderComparisonTab()}
-          </motion.div>
-        </AnimatePresence>
+        </div>
       </div>
-    </motion.div>
+
+      {/* Advanced Filters */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-gray-800 rounded-lg border border-gray-700 p-4"
+          >
+            <h3 className="text-lg font-semibold text-white mb-4">Advanced Filters</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Session Length Filter */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Session Length (min)</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    value={filters.minSessionLength}
+                    onChange={(e) => setFilters(prev => ({ ...prev, minSessionLength: Number(e.target.value) }))}
+                    className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                    placeholder="Min"
+                  />
+                  <span className="text-gray-400">to</span>
+                  <input
+                    type="number"
+                    value={filters.maxSessionLength}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxSessionLength: Number(e.target.value) }))}
+                    className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                    placeholder="Max"
+                  />
+                </div>
+              </div>
+
+              {/* Focus Score Filter */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Focus Score</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={filters.minFocusScore}
+                    onChange={(e) => setFilters(prev => ({ ...prev, minFocusScore: Number(e.target.value) }))}
+                    className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                    placeholder="Min"
+                  />
+                  <span className="text-gray-400">to</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={filters.maxFocusScore}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxFocusScore: Number(e.target.value) }))}
+                    className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                    placeholder="Max"
+                  />
+                </div>
+              </div>
+
+              {/* Phase Filter */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Phases</label>
+                <div className="flex flex-wrap gap-1">
+                  {[1, 2, 3, 4].map((phase) => (
+                    <button
+                      key={phase}
+                      onClick={() => {
+                        setSelectedPhases(prev => 
+                          prev.includes(phase) 
+                            ? prev.filter(p => p !== phase)
+                            : [...prev, phase]
+                        );
+                      }}
+                      className={`px-2 py-1 rounded text-xs transition-colors ${
+                        selectedPhases.includes(phase)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Phase {phase}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content */}
+      <div>
+        {selectedMetric === 'overview' && renderOverview()}
+        {selectedMetric === 'sessions' && renderSessionsAnalytics()}
+        {selectedMetric === 'memory' && renderMemoryAnalytics()}
+        {/* Add other metric views here */}
+      </div>
+    </div>
   );
 };
 

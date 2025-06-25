@@ -1,164 +1,97 @@
 /**
- * Neural Odyssey API Client
+ * Enhanced Neural Odyssey API Client
  * 
- * Centralized API communication layer with:
- * - Request/Response interceptors
- * - Error handling and retry logic
- * - Loading states and caching
- * - TypeScript-like JSDoc annotations
- * - Request/Response logging in development
+ * Comprehensive API client that leverages ALL backend capabilities:
+ * - Complete learning endpoints with session management
+ * - Spaced repetition system with SM-2 algorithm
+ * - Knowledge graph connections and analytics
+ * - Vault management with unlock conditions
+ * - Quest submissions with rich metadata
+ * - Analytics and insights
+ * - Streak tracking and achievements
  * 
  * Author: Neural Explorer
  */
 
 import axios from 'axios';
-import toast from 'react-hot-toast';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-const API_VERSION = 'v1';
-const REQUEST_TIMEOUT = 30000; // 30 seconds
+const API_VERSION = '/api/v1';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
-  baseURL: `${API_BASE_URL}/api/${API_VERSION}`,
-  timeout: REQUEST_TIMEOUT,
+  baseURL: `${API_BASE_URL}${API_VERSION}`,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
   },
 });
 
-// Request interceptor for logging and auth
+// Request interceptor for logging and authentication
 apiClient.interceptors.request.use(
   (config) => {
-    // Add timestamp to requests
-    config.metadata = { startTime: Date.now() };
-    
     // Log requests in development
     if (import.meta.env.DEV) {
-      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-        data: config.data,
-        params: config.params,
-      });
+      console.log(`🔄 API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
     }
-    
-    // Add auth token if available (for future use)
-    const token = localStorage.getItem('neural_odyssey_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
     return config;
   },
   (error) => {
-    console.error('❌ Request Error:', error);
+    console.error('❌ API Request Error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for logging and global error handling
+// Response interceptor for error handling and logging
 apiClient.interceptors.response.use(
   (response) => {
-    // Calculate request duration
-    const duration = Date.now() - response.config.metadata.startTime;
-    
     // Log responses in development
     if (import.meta.env.DEV) {
-      console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} (${duration}ms)`, {
-        status: response.status,
-        data: response.data,
-      });
+      console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
     }
-    
     return response;
   },
   (error) => {
-    // Calculate request duration for failed requests
-    const duration = error.config?.metadata?.startTime 
-      ? Date.now() - error.config.metadata.startTime 
-      : 0;
+    console.error('❌ API Response Error:', error.response?.data || error.message);
     
-    // Log errors in development
-    if (import.meta.env.DEV) {
-      console.error(`❌ API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} (${duration}ms)`, {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-      });
+    // Handle specific error cases
+    if (error.response?.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later.');
     }
     
-    // Handle different error types
-    if (error.response) {
-      // Server responded with error status
-      const { status, data } = error.response;
-      
-      switch (status) {
-        case 400:
-          console.warn('Bad Request:', data?.error?.message || error.message);
-          break;
-        case 401:
-          console.warn('Unauthorized - redirecting to login');
-          // Handle authentication errors
-          localStorage.removeItem('neural_odyssey_token');
-          // You could redirect to login page here
-          break;
-        case 403:
-          console.warn('Forbidden:', data?.error?.message || error.message);
-          toast.error('Access denied. You don\'t have permission for this action.');
-          break;
-        case 404:
-          console.warn('Not Found:', error.config?.url);
-          break;
-        case 429:
-          console.warn('Rate Limited');
-          toast.error('Too many requests. Please slow down.');
-          break;
-        case 500:
-          console.error('Server Error:', data?.error?.message || error.message);
-          toast.error('Server error. Please try again later.');
-          break;
-        case 503:
-          console.error('Service Unavailable');
-          toast.error('Service temporarily unavailable. Please try again.');
-          break;
-        default:
-          console.error('API Error:', data?.error?.message || error.message);
-      }
-    } else if (error.request) {
-      // Network error
-      console.error('Network Error:', error.message);
-      toast.error('Network error. Please check your connection.');
-    } else {
-      // Other error
-      console.error('Request Error:', error.message);
+    if (error.response?.status >= 500) {
+      throw new Error('Server error. Please check your connection and try again.');
     }
     
-    return Promise.reject(error);
+    throw error;
   }
 );
 
 /**
- * Learning API methods
+ * Learning API methods - Complete implementation
  */
 export const learningApi = {
   /**
-   * Get overall learning progress
-   * @returns {Promise<Object>} User progress data
+   * Get overall learning progress with filters
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Progress data
    */
-  getProgress: () => apiClient.get('/learning/progress'),
+  getProgress: (params = {}) => apiClient.get('/learning/progress', { params }),
   
   /**
    * Get phase-specific progress
-   * @param {number} phase - Phase number (1-4)
+   * @param {number} phase - Phase number
+   * @param {Object} params - Additional query parameters
    * @returns {Promise<Object>} Phase progress data
    */
-  getPhaseProgress: (phase) => apiClient.get(`/learning/progress/phase/${phase}`),
+  getPhaseProgress: (phase, params = {}) => 
+    apiClient.get(`/learning/progress/phase/${phase}`, { params }),
   
   /**
-   * Get lessons with optional filters
-   * @param {Object} params - Query parameters
-   * @returns {Promise<Object>} Lessons data
+   * Get all lessons with filtering
+   * @param {Object} params - Query parameters (phase, week, status, type, limit, offset)
+   * @returns {Promise<Object>} Lessons data with pagination
    */
   getLessons: (params = {}) => apiClient.get('/learning/lessons', { params }),
   
@@ -172,7 +105,7 @@ export const learningApi = {
   /**
    * Update lesson progress
    * @param {string} lessonId - Lesson ID
-   * @param {Object} progressData - Progress data
+   * @param {Object} progressData - Progress update data
    * @returns {Promise<Object>} Updated lesson data
    */
   updateLessonProgress: (lessonId, progressData) => 
@@ -188,43 +121,49 @@ export const learningApi = {
     apiClient.post(`/learning/lessons/${lessonId}/complete`, completionData),
   
   /**
-   * Get quest completions with filters
+   * Get quest/project completions with filters
    * @param {Object} params - Query parameters
    * @returns {Promise<Object>} Quests data
    */
   getQuests: (params = {}) => apiClient.get('/learning/quests', { params }),
   
   /**
-   * Submit quest completion
-   * @param {Object} questData - Quest completion data
-   * @returns {Promise<Object>} Quest completion result
+   * Submit quest completion with rich metadata
+   * @param {Object} questData - Complete quest submission data
+   * @returns {Promise<Object>} Submission result with mentor feedback
    */
   submitQuest: (questData) => apiClient.post('/learning/quests', questData),
   
   /**
-   * Update quest completion
-   * @param {number} questId - Quest completion ID
+   * Update existing quest completion
+   * @param {string} questId - Quest completion ID
    * @param {Object} questData - Updated quest data
    * @returns {Promise<Object>} Updated quest data
    */
   updateQuest: (questId, questData) => apiClient.put(`/learning/quests/${questId}`, questData),
   
   /**
-   * Get daily learning sessions
+   * Get daily learning sessions with comprehensive data
    * @param {Object} params - Query parameters
    * @returns {Promise<Object>} Sessions data
    */
   getSessions: (params = {}) => apiClient.get('/learning/sessions', { params }),
   
   /**
-   * Create or update daily session
-   * @param {Object} sessionData - Session data
+   * Get today's sessions with analytics
+   * @returns {Promise<Object>} Today's session data
+   */
+  getTodaySessions: () => apiClient.get('/learning/sessions/today'),
+  
+  /**
+   * Create new learning session with full tracking
+   * @param {Object} sessionData - Complete session data
    * @returns {Promise<Object>} Session result
    */
   createSession: (sessionData) => apiClient.post('/learning/sessions', sessionData),
   
   /**
-   * Update specific session
+   * Update specific session with rich metadata
    * @param {string} date - Session date (YYYY-MM-DD)
    * @param {Object} sessionData - Updated session data
    * @returns {Promise<Object>} Updated session data
@@ -234,15 +173,15 @@ export const learningApi = {
   /**
    * Get spaced repetition items due for review
    * @param {Object} params - Query parameters
-   * @returns {Promise<Object>} Due items data
+   * @returns {Promise<Object>} Due items data with SM-2 metadata
    */
   getSpacedRepetition: (params = {}) => apiClient.get('/learning/spaced-repetition', { params }),
   
   /**
-   * Record spaced repetition review
+   * Record spaced repetition review with SM-2 algorithm
    * @param {string} itemId - Item ID
-   * @param {Object} reviewData - Review data
-   * @returns {Promise<Object>} Review result
+   * @param {Object} reviewData - Review data with quality score
+   * @returns {Promise<Object>} Review result with next review date
    */
   reviewSpacedRepetition: (itemId, reviewData) => 
     apiClient.post(`/learning/spaced-repetition/${itemId}/review`, reviewData),
@@ -267,14 +206,34 @@ export const learningApi = {
    * @returns {Promise<Object>} Next lesson recommendation
    */
   getNextLesson: () => apiClient.get('/learning/next-lesson'),
+  
+  /**
+   * Get comprehensive learning analytics
+   * @param {Object} params - Query parameters (timeframe, etc.)
+   * @returns {Promise<Object>} Analytics data
+   */
+  getAnalytics: (params = {}) => apiClient.get('/learning/analytics', { params }),
+  
+  /**
+   * Get current learning streak with history
+   * @returns {Promise<Object>} Streak data
+   */
+  getStreak: () => apiClient.get('/learning/streak'),
+  
+  /**
+   * Reset learning progress (with confirmation)
+   * @param {Object} confirmationData - Reset confirmation data
+   * @returns {Promise<Object>} Reset result
+   */
+  resetProgress: (confirmationData) => apiClient.post('/learning/reset-progress', confirmationData),
 };
 
 /**
- * Vault API methods
+ * Vault API methods - Complete implementation
  */
 export const vaultApi = {
   /**
-   * Get all vault items with unlock status
+   * Get all vault items with unlock status and filters
    * @param {Object} params - Query parameters
    * @returns {Promise<Object>} Vault items data
    */
@@ -288,7 +247,7 @@ export const vaultApi = {
   getItem: (itemId) => apiClient.get(`/vault/items/${itemId}`),
   
   /**
-   * Attempt to unlock vault item
+   * Attempt to unlock vault item with condition checking
    * @param {string} itemId - Item ID
    * @returns {Promise<Object>} Unlock result
    */
@@ -309,7 +268,7 @@ export const vaultApi = {
   getUnlockConditions: (itemId) => apiClient.get(`/vault/unlock-conditions/${itemId}`),
   
   /**
-   * Check and unlock eligible items
+   * Check and unlock eligible items automatically
    * @returns {Promise<Object>} Newly unlocked items
    */
   checkUnlocks: () => apiClient.post('/vault/check-unlocks'),
@@ -321,6 +280,15 @@ export const vaultApi = {
   getCategories: () => apiClient.get('/vault/categories'),
   
   /**
+   * Get vault items in specific category
+   * @param {string} category - Category name
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Category items data
+   */
+  getCategoryItems: (category, params = {}) => 
+    apiClient.get(`/vault/categories/${category}`, { params }),
+  
+  /**
    * Get recently unlocked items
    * @param {Object} params - Query parameters
    * @returns {Promise<Object>} Recent items data
@@ -328,14 +296,80 @@ export const vaultApi = {
   getRecent: (params = {}) => apiClient.get('/vault/recent', { params }),
   
   /**
-   * Get vault statistics
+   * Get user's favorite vault items
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Favorite items data
+   */
+  getFavorites: (params = {}) => apiClient.get('/vault/favorites', { params }),
+  
+  /**
+   * Get comprehensive vault statistics
    * @returns {Promise<Object>} Vault statistics
    */
-  getStats: () => apiClient.get('/vault/stats'),
+  getStatistics: () => apiClient.get('/vault/statistics'),
+  
+  /**
+   * Mark vault item as read
+   * @param {string} itemId - Item ID
+   * @param {Object} readData - Read tracking data
+   * @returns {Promise<Object>} Read result
+   */
+  markAsRead: (itemId, readData = {}) => 
+    apiClient.post(`/vault/items/${itemId}/read`, readData),
+  
+  /**
+   * Rate a vault item
+   * @param {string} itemId - Item ID
+   * @param {Object} ratingData - Rating data
+   * @returns {Promise<Object>} Rating result
+   */
+  rateItem: (itemId, ratingData) => 
+    apiClient.post(`/vault/items/${itemId}/rate`, ratingData),
+  
+  /**
+   * Toggle favorite status
+   * @param {string} itemId - Item ID
+   * @returns {Promise<Object>} Favorite toggle result
+   */
+  toggleFavorite: (itemId) => apiClient.post(`/vault/items/${itemId}/favorite`),
+  
+  /**
+   * Get personalized vault recommendations
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Recommendations data
+   */
+  getRecommendations: (params = {}) => apiClient.get('/vault/recommendations', { params }),
+  
+  /**
+   * Get vault unlock timeline
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Timeline data
+   */
+  getTimeline: (params = {}) => apiClient.get('/vault/timeline', { params }),
+  
+  /**
+   * Search vault items
+   * @param {Object} params - Search parameters
+   * @returns {Promise<Object>} Search results
+   */
+  searchItems: (params = {}) => apiClient.get('/vault/search', { params }),
+  
+  /**
+   * Get detailed vault analytics
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Analytics data
+   */
+  getAnalytics: (params = {}) => apiClient.get('/vault/analytics', { params }),
+  
+  /**
+   * Reload vault items from configuration (development)
+   * @returns {Promise<Object>} Reload result
+   */
+  reloadItems: () => apiClient.post('/vault/reload'),
 };
 
 /**
- * System API methods
+ * System and utility API methods
  */
 export const systemApi = {
   /**
@@ -348,162 +382,208 @@ export const systemApi = {
    * Get API documentation
    * @returns {Promise<Object>} API documentation
    */
-  getDocs: () => apiClient.get('/'),
+  getDocs: () => apiClient.get('/docs'),
+  
+  /**
+   * Export user portfolio and progress
+   * @param {Object} exportOptions - Export configuration
+   * @returns {Promise<Object>} Export data
+   */
+  exportPortfolio: (exportOptions = {}) => apiClient.post('/export/portfolio', exportOptions),
+  
+  /**
+   * Backup database
+   * @returns {Promise<Object>} Backup result
+   */
+  backupDatabase: () => apiClient.post('/system/backup'),
+  
+  /**
+   * Get system statistics
+   * @returns {Promise<Object>} System stats
+   */
+  getSystemStats: () => apiClient.get('/system/stats'),
 };
 
 /**
- * Generic API methods
+ * Analytics API methods - Extended functionality
  */
-export const api = {
-  // HTTP methods
-  get: (url, config) => apiClient.get(url, config),
-  post: (url, data, config) => apiClient.post(url, data, config),
-  put: (url, data, config) => apiClient.put(url, data, config),
-  patch: (url, data, config) => apiClient.patch(url, data, config),
-  delete: (url, config) => apiClient.delete(url, config),
+export const analyticsApi = {
+  /**
+   * Get comprehensive dashboard analytics
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Dashboard analytics
+   */
+  getDashboard: (params = {}) => apiClient.get('/analytics/dashboard', { params }),
   
-  // Specialized methods
+  /**
+   * Get learning patterns analysis
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Learning patterns data
+   */
+  getLearningPatterns: (params = {}) => apiClient.get('/analytics/patterns', { params }),
+  
+  /**
+   * Get performance insights
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Performance insights
+   */
+  getPerformanceInsights: (params = {}) => apiClient.get('/analytics/performance', { params }),
+  
+  /**
+   * Get learning velocity analysis
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Velocity analysis
+   */
+  getVelocityAnalysis: (params = {}) => apiClient.get('/analytics/velocity', { params }),
+  
+  /**
+   * Get focus and productivity metrics
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Focus metrics
+   */
+  getFocusMetrics: (params = {}) => apiClient.get('/analytics/focus', { params }),
+  
+  /**
+   * Get skill progression analysis
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Skill progression data
+   */
+  getSkillProgression: (params = {}) => apiClient.get('/analytics/skills', { params }),
+};
+
+/**
+ * Quick access methods for common operations
+ */
+export const quickActions = {
+  /**
+   * Start a quick learning session
+   * @param {string} sessionType - Type of session
+   * @param {Object} options - Session options
+   * @returns {Promise<Object>} Session start result
+   */
+  startSession: async (sessionType = 'math', options = {}) => {
+    const sessionData = {
+      session_type: sessionType,
+      energy_level: options.energy || 8,
+      mood_before: options.mood || 'focused',
+      goals: options.goals || [],
+      target_duration_minutes: options.duration || 25,
+      start_time: new Date().toISOString(),
+      ...options
+    };
+    
+    return learningApi.createSession(sessionData);
+  },
+  
+  /**
+   * Complete current session with metrics
+   * @param {string} date - Session date
+   * @param {Object} metrics - Session completion metrics
+   * @returns {Promise<Object>} Session completion result
+   */
+  completeSession: async (date, metrics = {}) => {
+    const sessionData = {
+      end_time: new Date().toISOString(),
+      actual_duration_minutes: metrics.duration || 25,
+      focus_score: metrics.focus || 8,
+      mood_after: metrics.mood || 'accomplished',
+      session_notes: metrics.notes || '',
+      goal_completion_rate: metrics.goalCompletion || 1.0,
+      ...metrics
+    };
+    
+    return learningApi.updateSession(date, sessionData);
+  },
+  
+  /**
+   * Submit quest with automatic metadata
+   * @param {Object} questData - Quest submission data
+   * @returns {Promise<Object>} Quest submission result
+   */
+  submitQuest: async (questData) => {
+    const enrichedData = {
+      completed_at: new Date().toISOString(),
+      status: questData.status || 'completed',
+      time_to_complete_minutes: questData.timeSpent || 0,
+      attempts_count: questData.attempts || 1,
+      self_reflection: questData.reflection || '',
+      ...questData
+    };
+    
+    return learningApi.submitQuest(enrichedData);
+  },
+  
+  /**
+   * Review spaced repetition item
+   * @param {string} itemId - Item ID
+   * @param {number} quality - Quality score (0-5)
+   * @param {string} notes - Optional review notes
+   * @returns {Promise<Object>} Review result
+   */
+  reviewItem: async (itemId, quality, notes = '') => {
+    return learningApi.reviewSpacedRepetition(itemId, {
+      quality_score: quality,
+      review_notes: notes,
+      reviewed_at: new Date().toISOString()
+    });
+  },
+  
+  /**
+   * Check for new vault unlocks
+   * @returns {Promise<Object>} New unlocks result
+   */
+  checkVaultUnlocks: async () => {
+    return vaultApi.checkUnlocks();
+  },
+  
+  /**
+   * Get today's learning summary
+   * @returns {Promise<Object>} Today's summary
+   */
+  getTodaySummary: async () => {
+    const [sessions, progress, reviews] = await Promise.all([
+      learningApi.getTodaySessions(),
+      learningApi.getProgress({ timeframe: 'today' }),
+      learningApi.getSpacedRepetition({ due_today: true })
+    ]);
+    
+    return {
+      sessions: sessions.data,
+      progress: progress.data,
+      reviews: reviews.data
+    };
+  }
+};
+
+/**
+ * Default export with all API methods
+ */
+const api = {
   learning: learningApi,
   vault: vaultApi,
   system: systemApi,
-};
-
-/**
- * Utility functions
- */
-
-/**
- * Create a React Query key from API endpoint and parameters
- * @param {string} endpoint - API endpoint
- * @param {Object} params - Query parameters
- * @returns {Array} React Query key
- */
-export const createQueryKey = (endpoint, params = {}) => {
-  const baseKey = endpoint.split('/').filter(Boolean);
-  if (Object.keys(params).length > 0) {
-    baseKey.push(params);
-  }
-  return baseKey;
-};
-
-/**
- * Handle API errors with user-friendly messages
- * @param {Error} error - Axios error object
- * @param {string} defaultMessage - Default error message
- * @returns {string} User-friendly error message
- */
-export const getErrorMessage = (error, defaultMessage = 'An error occurred') => {
-  if (error.response?.data?.error?.message) {
-    return error.response.data.error.message;
-  }
-  if (error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  if (error.message) {
-    return error.message;
-  }
-  return defaultMessage;
-};
-
-/**
- * Check if error is a network error
- * @param {Error} error - Error object
- * @returns {boolean} True if network error
- */
-export const isNetworkError = (error) => {
-  return !error.response && error.request;
-};
-
-/**
- * Check if error is a client error (4xx)
- * @param {Error} error - Error object
- * @returns {boolean} True if client error
- */
-export const isClientError = (error) => {
-  return error.response?.status >= 400 && error.response?.status < 500;
-};
-
-/**
- * Check if error is a server error (5xx)
- * @param {Error} error - Error object
- * @returns {boolean} True if server error
- */
-export const isServerError = (error) => {
-  return error.response?.status >= 500;
-};
-
-/**
- * Retry function for failed requests
- * @param {Function} fn - Function to retry
- * @param {number} retries - Number of retries
- * @param {number} delay - Delay between retries (ms)
- * @returns {Promise} Function result
- */
-export const retryRequest = async (fn, retries = 3, delay = 1000) => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (i === retries - 1 || isClientError(error)) {
-        throw error;
-      }
-      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
-    }
-  }
-};
-
-/**
- * Upload file with progress tracking
- * @param {string} url - Upload URL
- * @param {FormData} formData - Form data with file
- * @param {Function} onProgress - Progress callback
- * @returns {Promise} Upload result
- */
-export const uploadFile = (url, formData, onProgress) => {
-  return apiClient.post(url, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-    onUploadProgress: (progressEvent) => {
-      if (onProgress && progressEvent.total) {
-        const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-        onProgress(progress);
-      }
-    },
-  });
-};
-
-/**
- * Download file with progress tracking
- * @param {string} url - Download URL
- * @param {string} filename - Filename for download
- * @param {Function} onProgress - Progress callback
- * @returns {Promise} Download result
- */
-export const downloadFile = async (url, filename, onProgress) => {
-  const response = await apiClient.get(url, {
-    responseType: 'blob',
-    onDownloadProgress: (progressEvent) => {
-      if (onProgress && progressEvent.total) {
-        const progress = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-        onProgress(progress);
-      }
-    },
-  });
+  analytics: analyticsApi,
+  quick: quickActions,
   
-  // Create download link
-  const blob = new Blob([response.data]);
-  const downloadUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = downloadUrl;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(downloadUrl);
-  
-  return response;
+  // Legacy support - keep existing method signatures
+  get: (url, config) => apiClient.get(url, config),
+  post: (url, data, config) => apiClient.post(url, data, config),
+  put: (url, data, config) => apiClient.put(url, data, config),
+  delete: (url, config) => apiClient.delete(url, config),
+  patch: (url, data, config) => apiClient.patch(url, data, config),
 };
 
-// Export default api object
 export default api;
+
+// Named exports for convenience
+export {
+  learningApi,
+  vaultApi,
+  systemApi,
+  analyticsApi,
+  quickActions,
+  apiClient
+};
+
+// Export the full api object
+export { api };

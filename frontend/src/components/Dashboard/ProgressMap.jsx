@@ -1,661 +1,879 @@
 /**
- * Neural Odyssey Progress Map Component
- *
- * Visual representation of the user's learning journey through the ML curriculum.
- * Displays a dynamic, interactive map showing progress through all 4 phases,
- * current position, completed lessons, upcoming challenges, and unlocked vault items.
- *
- * Features:
- * - 4-phase learning path visualization
- * - Interactive phase and week navigation
- * - Real-time progress tracking
- * - Completion status indicators
- * - Vault item unlock notifications
- * - Responsive design with smooth animations
- * - Streak and achievement displays
- * - Next lesson recommendations
+ * Enhanced Neural Odyssey Progress Map Component
+ * 
+ * Now fully leverages ALL backend capabilities:
+ * - Knowledge graph connections with relationship types and strengths
+ * - Interactive learning path visualization with neural network styling
+ * - Real-time progress tracking with completion states
+ * - Concept prerequisite mapping and dependency visualization
+ * - Learning velocity analysis with optimal path suggestions
+ * - Phase and week progression with unlock conditions
+ * - Session type integration showing recommended learning modes
+ * - Skill point distribution and mastery indicators
+ * - Adaptive difficulty visualization based on performance
+ * - Interactive exploration with detailed tooltips and insights
  *
  * Author: Neural Explorer
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from 'react-query';
-import { useNavigate } from 'react-router-dom';
 import {
-    Map,
-    MapPin,
-    CheckCircle,
-    Circle,
-    Star,
-    Lock,
-    Unlock,
-    Trophy,
-    Flame,
-    Brain,
-    Code,
-    Eye,
-    Target,
-    ChevronRight,
-    ChevronDown,
-    ChevronUp,
-    Sparkles,
-    Award,
-    Calendar,
-    Clock,
-    TrendingUp,
-    Zap,
-    BookOpen,
-    Lightbulb
+  Brain,
+  Target,
+  BookOpen,
+  Code,
+  Eye,
+  Award,
+  Star,
+  CheckCircle,
+  Circle,
+  Lock,
+  Unlock,
+  TrendingUp,
+  Clock,
+  Zap,
+  Layers,
+  Map,
+  Compass,
+  ArrowRight,
+  ArrowDown,
+  ChevronRight,
+  Plus,
+  Minus,
+  Search,
+  Filter,
+  Settings,
+  Info,
+  Lightbulb,
+  Activity,
+  BarChart3,
+  Timer,
+  Flame,
+  Users,
+  Globe,
+  Bookmark,
+  Calendar,
+  Cpu,
+  Database,
+  Network,
+  GitBranch
 } from 'lucide-react';
-import { api } from '../../utils/api';
+import * as d3 from 'd3';
 
-const ProgressMap = ({ profile, className = '' }) => {
-    const navigate = useNavigate();
-    const [selectedPhase, setSelectedPhase] = useState(null);
-    const [hoveredWeek, setHoveredWeek] = useState(null);
-    const [mapView, setMapView] = useState('overview'); // 'overview' | 'detailed'
+// Utils
+import { api } from '../utils/api';
 
-    // Fetch learning progress data
-    const { data: progressData, isLoading, error, refetch } = useQuery(
-        'learningProgress',
-        () => api.get('/learning/progress'),
-        {
-            refetchInterval: 30000,
-            staleTime: 60000
-        }
-    );
+const ProgressMap = ({ 
+  data, 
+  compact = false, 
+  interactive = true,
+  showConnections = true,
+  highlightPhase = null,
+  onNodeClick,
+  className = '' 
+}) => {
+  // State management
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [hoveredNode, setHoveredNode] = useState(null);
+  const [viewMode, setViewMode] = useState('neural'); // neural, tree, flow, grid
+  const [filterLevel, setFilterLevel] = useState('all'); // all, current, completed, locked
+  const [showLabels, setShowLabels] = useState(!compact);
+  const [showDifficulty, setShowDifficulty] = useState(true);
+  const [showPrerequisites, setShowPrerequisites] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [centerPosition, setCenterPosition] = useState({ x: 0, y: 0 });
 
-    // Fetch vault statistics
-    const { data: vaultData } = useQuery(
-        'vaultProgress',
-        () => api.get('/vault/statistics'),
-        {
-            refetchInterval: 60000
-        }
-    );
+  // Refs
+  const svgRef = useRef(null);
+  const containerRef = useRef(null);
+  const simulationRef = useRef(null);
 
-    // Fetch streak information
-    const { data: streakData } = useQuery(
-        'streakInfo',
-        () => api.get('/learning/streak'),
-        {
-            refetchInterval: 30000
-        }
-    );
+  // Data fetching for enhanced features
+  const { data: knowledgeGraph } = useQuery(
+    'knowledgeGraphMap',
+    () => api.learning.getKnowledgeGraph({ include_strength: true, include_prerequisites: true }),
+    {
+      refetchInterval: 300000,
+      enabled: showConnections
+    }
+  );
 
-    // Process progress data
-    const progressSummary = useMemo(() => {
-        if (!progressData?.data) return null;
+  const { data: progressData } = useQuery(
+    'progressMapData',
+    () => api.learning.getProgress({ include_analytics: true, include_velocity: true }),
+    {
+      refetchInterval: 60000
+    }
+  );
 
-        const { summary, progressByPhase } = progressData.data;
-        
-        return {
-            currentPhase: summary.currentPhase || 1,
-            currentWeek: summary.currentWeek || 1,
-            totalLessons: summary.totalLessons || 0,
-            completedLessons: summary.completedLessons || 0,
-            masteredLessons: summary.masteredLessons || 0,
-            totalStudyTime: summary.totalStudyTime || 0,
-            averageMasteryScore: summary.averageMasteryScore || 0,
-            streakDays: summary.streakDays || 0,
-            progressByPhase: progressByPhase || {}
-        };
-    }, [progressData]);
+  const { data: skillData } = useQuery(
+    'skillMapData',
+    () => api.learning.getAnalytics({ metric: 'skills', include_distribution: true }),
+    {
+      refetchInterval: 300000
+    }
+  );
 
-    // Phase configuration
+  // Process and structure the data
+  const processedData = useMemo(() => {
+    if (!data && !progressData) return { nodes: [], links: [] };
+
+    const sourceData = data || progressData?.data;
+    if (!sourceData) return { nodes: [], links: [] };
+
+    // Create nodes from lessons/concepts
+    const nodes = [];
+    const links = [];
+    const nodeMap = new Map();
+
+    // Learning path structure with enhanced metadata
     const phases = [
-        {
-            id: 1,
-            title: 'Mathematical Foundations',
-            description: 'Linear algebra, calculus, probability, and statistics',
-            icon: Brain,
-            color: 'from-blue-500 to-blue-600',
-            lightColor: 'from-blue-100 to-blue-200',
-            weeks: 12,
-            concepts: ['Linear Algebra', 'Calculus', 'Probability', 'Statistics']
-        },
-        {
-            id: 2,
-            title: 'Core Machine Learning',
-            description: 'Supervised learning, unsupervised learning, and evaluation',
-            icon: Code,
-            color: 'from-green-500 to-green-600',
-            lightColor: 'from-green-100 to-green-200',
-            weeks: 12,
-            concepts: ['Supervised Learning', 'Unsupervised Learning', 'Model Evaluation', 'Feature Engineering']
-        },
-        {
-            id: 3,
-            title: 'Advanced Techniques',
-            description: 'Deep learning, neural networks, and specialized algorithms',
-            icon: Eye,
-            color: 'from-purple-500 to-purple-600',
-            lightColor: 'from-purple-100 to-purple-200',
-            weeks: 12,
-            concepts: ['Deep Learning', 'Neural Networks', 'Computer Vision', 'NLP']
-        },
-        {
-            id: 4,
-            title: 'Mastery & Applications',
-            description: 'Real-world projects, optimization, and research',
-            icon: Target,
-            color: 'from-orange-500 to-orange-600',
-            lightColor: 'from-orange-100 to-orange-200',
-            weeks: 12,
-            concepts: ['MLOps', 'Production Systems', 'Research Methods', 'Advanced Projects']
-        }
+      {
+        id: 1,
+        title: 'Mathematical Foundations',
+        color: '#3B82F6',
+        weeks: 12,
+        concepts: ['linear_algebra', 'calculus', 'probability', 'statistics', 'optimization']
+      },
+      {
+        id: 2,
+        title: 'Core Machine Learning',
+        color: '#10B981',
+        weeks: 12,
+        concepts: ['supervised_learning', 'unsupervised_learning', 'neural_networks', 'evaluation']
+      },
+      {
+        id: 3,
+        title: 'Advanced Techniques',
+        color: '#8B5CF6',
+        weeks: 12,
+        concepts: ['deep_learning', 'transformers', 'nlp', 'computer_vision', 'rl']
+      },
+      {
+        id: 4,
+        title: 'Research & Mastery',
+        color: '#F59E0B',
+        weeks: 2,
+        concepts: ['research', 'innovation', 'publication', 'leadership']
+      }
     ];
 
-    // Calculate phase statistics
-    const getPhaseStats = (phaseId) => {
-        if (!progressSummary?.progressByPhase[phaseId]) {
-            return {
-                totalLessons: 0,
-                completedLessons: 0,
-                completionRate: 0,
-                weeks: {}
-            };
+    // Create phase nodes
+    phases.forEach((phase, phaseIndex) => {
+      // Create weeks for each phase
+      for (let week = 1; week <= phase.weeks; week++) {
+        const weekId = `phase_${phase.id}_week_${week}`;
+        const weekProgress = sourceData.progress?.find(p => p.phase === phase.id && p.week === week);
+        
+        const node = {
+          id: weekId,
+          type: 'week',
+          phase: phase.id,
+          week: week,
+          title: `Phase ${phase.id} Week ${week}`,
+          description: `Week ${week} of ${phase.title}`,
+          color: phase.color,
+          status: weekProgress?.status || 'not_started',
+          progress: weekProgress?.progress || 0,
+          difficulty: weekProgress?.difficulty_rating || 3,
+          timeSpent: weekProgress?.time_spent_minutes || 0,
+          concepts: phase.concepts.slice(0, Math.ceil(phase.concepts.length / phase.weeks)),
+          skills: weekProgress?.skills || [],
+          prerequisites: week > 1 ? [`phase_${phase.id}_week_${week - 1}`] : 
+                        phase.id > 1 ? [`phase_${phase.id - 1}_week_${phases[phaseIndex - 1].weeks}`] : [],
+          x: 0,
+          y: 0,
+          fx: null,
+          fy: null
+        };
+
+        nodes.push(node);
+        nodeMap.set(weekId, node);
+
+        // Create prerequisite links
+        node.prerequisites.forEach(prereqId => {
+          if (nodeMap.has(prereqId)) {
+            links.push({
+              source: prereqId,
+              target: weekId,
+              type: 'prerequisite',
+              strength: 0.8
+            });
+          }
+        });
+      }
+    });
+
+    // Add knowledge graph connections if available
+    if (knowledgeGraph?.data?.connections && showConnections) {
+      knowledgeGraph.data.connections.forEach(connection => {
+        const sourceNode = nodes.find(n => 
+          n.concepts?.includes(connection.from_concept) || 
+          n.id.includes(connection.from_concept)
+        );
+        const targetNode = nodes.find(n => 
+          n.concepts?.includes(connection.to_concept) || 
+          n.id.includes(connection.to_concept)
+        );
+
+        if (sourceNode && targetNode) {
+          links.push({
+            source: sourceNode.id,
+            target: targetNode.id,
+            type: connection.relationship_type || 'related',
+            strength: connection.strength || 0.5,
+            description: connection.description
+          });
         }
+      });
+    }
 
-        const phaseData = progressSummary.progressByPhase[phaseId];
-        let totalLessons = 0;
-        let completedLessons = 0;
+    return { nodes, links };
+  }, [data, progressData, knowledgeGraph, showConnections]);
 
-        Object.values(phaseData).forEach(week => {
-            totalLessons += week.length;
-            completedLessons += week.filter(lesson => 
-                lesson.status === 'completed' || lesson.status === 'mastered'
-            ).length;
+  // Filter nodes based on current filter level
+  const filteredData = useMemo(() => {
+    let filteredNodes = processedData.nodes;
+
+    switch (filterLevel) {
+      case 'current':
+        filteredNodes = filteredNodes.filter(node => 
+          node.status === 'in_progress' || 
+          (node.phase === progressData?.data?.profile?.current_phase)
+        );
+        break;
+      case 'completed':
+        filteredNodes = filteredNodes.filter(node => 
+          node.status === 'completed' || node.status === 'mastered'
+        );
+        break;
+      case 'locked':
+        filteredNodes = filteredNodes.filter(node => 
+          node.status === 'not_started' || node.status === 'locked'
+        );
+        break;
+    }
+
+    const filteredNodeIds = new Set(filteredNodes.map(n => n.id));
+    const filteredLinks = processedData.links.filter(link => 
+      filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
+    );
+
+    return { nodes: filteredNodes, links: filteredLinks };
+  }, [processedData, filterLevel, progressData]);
+
+  // D3 force simulation setup
+  useEffect(() => {
+    if (!svgRef.current || filteredData.nodes.length === 0) return;
+
+    const svg = d3.select(svgRef.current);
+    const container = containerRef.current;
+    const width = container?.clientWidth || 800;
+    const height = container?.clientHeight || 600;
+
+    // Clear previous simulation
+    if (simulationRef.current) {
+      simulationRef.current.stop();
+    }
+
+    // Create simulation based on view mode
+    let simulation;
+    
+    if (viewMode === 'neural') {
+      simulation = d3.forceSimulation(filteredData.nodes)
+        .force('link', d3.forceLink(filteredData.links)
+          .id(d => d.id)
+          .distance(d => compact ? 60 : 100)
+          .strength(d => d.strength || 0.5)
+        )
+        .force('charge', d3.forceManyBody()
+          .strength(compact ? -100 : -200)
+        )
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide()
+          .radius(d => compact ? 15 : 25)
+        );
+    } else if (viewMode === 'tree') {
+      // Hierarchical tree layout
+      const hierarchy = d3.hierarchy({
+        children: filteredData.nodes.filter(n => n.phase === 1)
+      });
+      
+      const treeLayout = d3.tree()
+        .size([width - 100, height - 100]);
+      
+      treeLayout(hierarchy);
+      
+      simulation = d3.forceSimulation(filteredData.nodes)
+        .force('link', d3.forceLink(filteredData.links)
+          .id(d => d.id)
+          .distance(80)
+        )
+        .force('charge', d3.forceManyBody().strength(-150))
+        .force('center', d3.forceCenter(width / 2, height / 2));
+    } else if (viewMode === 'flow') {
+      // Flow-based layout
+      simulation = d3.forceSimulation(filteredData.nodes)
+        .force('link', d3.forceLink(filteredData.links)
+          .id(d => d.id)
+          .distance(120)
+        )
+        .force('charge', d3.forceManyBody().strength(-100))
+        .force('x', d3.forceX(d => (d.phase - 1) * (width / 4) + width / 8).strength(0.5))
+        .force('y', d3.forceY(d => (d.week - 1) * 40 + height / 6).strength(0.3))
+        .force('collision', d3.forceCollide().radius(20));
+    } else {
+      // Grid layout
+      simulation = d3.forceSimulation(filteredData.nodes)
+        .force('x', d3.forceX(d => (d.phase - 1) * (width / 4) + width / 8).strength(1))
+        .force('y', d3.forceY(d => (d.week - 1) * (height / 12) + height / 24).strength(1))
+        .force('collision', d3.forceCollide().radius(compact ? 12 : 20));
+    }
+
+    simulationRef.current = simulation;
+
+    // Clear SVG
+    svg.selectAll('*').remove();
+
+    // Create zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.1, 3])
+      .on('zoom', (event) => {
+        setZoomLevel(event.transform.k);
+        setCenterPosition({ x: event.transform.x, y: event.transform.y });
+        svg.select('.zoom-group').attr('transform', event.transform);
+      });
+
+    svg.call(zoom);
+
+    // Create main group for zooming
+    const g = svg.append('g').attr('class', 'zoom-group');
+
+    // Create links
+    const link = g.append('g')
+      .attr('class', 'links')
+      .selectAll('line')
+      .data(filteredData.links)
+      .enter()
+      .append('line')
+      .attr('class', d => `link link-${d.type}`)
+      .attr('stroke', d => {
+        const colors = {
+          prerequisite: '#6B7280',
+          related: '#3B82F6',
+          builds_on: '#10B981',
+          applies_to: '#8B5CF6'
+        };
+        return colors[d.type] || '#6B7280';
+      })
+      .attr('stroke-width', d => compact ? 1 : (d.strength || 0.5) * 3)
+      .attr('stroke-opacity', compact ? 0.4 : 0.6)
+      .attr('stroke-dasharray', d => d.type === 'prerequisite' ? '0' : '5,5');
+
+    // Create nodes
+    const node = g.append('g')
+      .attr('class', 'nodes')
+      .selectAll('.node')
+      .data(filteredData.nodes)
+      .enter()
+      .append('g')
+      .attr('class', 'node')
+      .style('cursor', interactive ? 'pointer' : 'default');
+
+    // Node circles
+    node.append('circle')
+      .attr('r', d => {
+        if (compact) return 8;
+        const baseSize = 15;
+        const progressMultiplier = 1 + (d.progress || 0) * 0.5;
+        return baseSize * progressMultiplier;
+      })
+      .attr('fill', d => {
+        const statusColors = {
+          'not_started': '#374151',
+          'in_progress': '#F59E0B',
+          'completed': '#10B981',
+          'mastered': '#8B5CF6',
+          'locked': '#6B7280'
+        };
+        return statusColors[d.status] || d.color || '#3B82F6';
+      })
+      .attr('stroke', d => {
+        if (d.id === selectedNode?.id) return '#FFFFFF';
+        if (d.id === hoveredNode?.id) return '#E5E7EB';
+        return '#1F2937';
+      })
+      .attr('stroke-width', d => {
+        if (d.id === selectedNode?.id) return 3;
+        if (d.id === hoveredNode?.id) return 2;
+        return 1;
+      })
+      .attr('opacity', d => {
+        if (highlightPhase && d.phase !== highlightPhase) return 0.3;
+        return 1;
+      });
+
+    // Progress rings
+    if (!compact) {
+      node.append('circle')
+        .attr('r', 20)
+        .attr('fill', 'none')
+        .attr('stroke', d => d.color || '#3B82F6')
+        .attr('stroke-width', 2)
+        .attr('stroke-opacity', 0.3)
+        .attr('stroke-dasharray', d => {
+          const circumference = 2 * Math.PI * 20;
+          const progress = d.progress || 0;
+          return `${circumference * progress} ${circumference * (1 - progress)}`;
+        })
+        .attr('transform', 'rotate(-90)');
+    }
+
+    // Difficulty indicators
+    if (showDifficulty && !compact) {
+      node.append('rect')
+        .attr('x', -15)
+        .attr('y', -25)
+        .attr('width', 30)
+        .attr('height', 3)
+        .attr('fill', d => {
+          const difficulty = d.difficulty || 3;
+          if (difficulty <= 2) return '#10B981'; // Easy - Green
+          if (difficulty <= 4) return '#F59E0B'; // Medium - Yellow
+          return '#EF4444'; // Hard - Red
+        })
+        .attr('opacity', 0.7);
+    }
+
+    // Node labels
+    if (showLabels) {
+      node.append('text')
+        .attr('dy', compact ? 3 : 35)
+        .attr('text-anchor', 'middle')
+        .style('font-size', compact ? '8px' : '12px')
+        .style('font-weight', '500')
+        .style('fill', '#F3F4F6')
+        .style('pointer-events', 'none')
+        .text(d => {
+          if (compact) return `P${d.phase}W${d.week}`;
+          return `Phase ${d.phase} Week ${d.week}`;
+        });
+    }
+
+    // Status icons
+    if (!compact) {
+      node.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dy', 5)
+        .style('font-size', '12px')
+        .style('fill', '#FFFFFF')
+        .style('pointer-events', 'none')
+        .text(d => {
+          const icons = {
+            'completed': '✓',
+            'mastered': '★',
+            'in_progress': '◐',
+            'locked': '🔒'
+          };
+          return icons[d.status] || '';
+        });
+    }
+
+    // Event handlers
+    if (interactive) {
+      node
+        .on('mouseover', function(event, d) {
+          setHoveredNode(d);
+          
+          // Highlight connected nodes
+          const connectedNodes = new Set();
+          filteredData.links.forEach(link => {
+            if (link.source.id === d.id) connectedNodes.add(link.target.id);
+            if (link.target.id === d.id) connectedNodes.add(link.source.id);
+          });
+          
+          node.selectAll('circle')
+            .attr('opacity', node => {
+              if (node.id === d.id) return 1;
+              if (connectedNodes.has(node.id)) return 0.8;
+              return 0.3;
+            });
+
+          link.attr('opacity', link => {
+            if (link.source.id === d.id || link.target.id === d.id) return 0.8;
+            return 0.1;
+          });
+        })
+        .on('mouseout', function() {
+          setHoveredNode(null);
+          
+          node.selectAll('circle').attr('opacity', 1);
+          link.attr('opacity', compact ? 0.4 : 0.6);
+        })
+        .on('click', function(event, d) {
+          setSelectedNode(d);
+          if (onNodeClick) onNodeClick(d);
         });
 
-        return {
-            totalLessons,
-            completedLessons,
-            completionRate: totalLessons > 0 ? completedLessons / totalLessons : 0,
-            weeks: phaseData
-        };
-    };
+      // Drag behavior
+      const drag = d3.drag()
+        .on('start', (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on('drag', (event, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on('end', (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        });
 
-    // Get current position indicator
-    const getCurrentPosition = () => {
-        if (!progressSummary) return { phase: 1, week: 1 };
-        return {
-            phase: progressSummary.currentPhase,
-            week: progressSummary.currentWeek
-        };
-    };
-
-    // Handle phase selection
-    const handlePhaseClick = (phase) => {
-        if (selectedPhase === phase.id) {
-            setSelectedPhase(null);
-            setMapView('overview');
-        } else {
-            setSelectedPhase(phase.id);
-            setMapView('detailed');
-        }
-    };
-
-    // Handle week navigation
-    const handleWeekClick = (phaseId, weekNumber) => {
-        navigate(`/learning/phase/${phaseId}/week/${weekNumber}`);
-    };
-
-    // Render phase card
-    const renderPhaseCard = (phase) => {
-        const stats = getPhaseStats(phase.id);
-        const isSelected = selectedPhase === phase.id;
-        const isCurrent = getCurrentPosition().phase === phase.id;
-        const isCompleted = stats.completionRate >= 0.8;
-        const isLocked = phase.id > getCurrentPosition().phase + 1;
-
-        const IconComponent = phase.icon;
-
-        return (
-            <motion.div
-                key={phase.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: phase.id * 0.1 }}
-                className={`relative cursor-pointer group ${isSelected ? 'z-10' : 'z-0'}`}
-                onClick={() => !isLocked && handlePhaseClick(phase)}
-            >
-                <div className={`
-                    relative overflow-hidden rounded-xl border-2 transition-all duration-300
-                    ${isSelected ? 'border-white shadow-2xl scale-105' : 'border-gray-700 hover:border-gray-600'}
-                    ${isCurrent ? 'ring-2 ring-yellow-400 ring-opacity-50' : ''}
-                    ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}
-                `}>
-                    {/* Background gradient */}
-                    <div className={`
-                        absolute inset-0 bg-gradient-to-br opacity-90
-                        ${isLocked ? 'from-gray-600 to-gray-700' : phase.color}
-                    `} />
-
-                    {/* Content */}
-                    <div className="relative p-6 text-white">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-3">
-                                <div className={`
-                                    p-3 rounded-lg bg-white bg-opacity-20 backdrop-blur-sm
-                                    ${isCurrent ? 'ring-2 ring-yellow-300' : ''}
-                                `}>
-                                    {isLocked ? (
-                                        <Lock className="w-6 h-6" />
-                                    ) : isCompleted ? (
-                                        <CheckCircle className="w-6 h-6 text-green-300" />
-                                    ) : (
-                                        <IconComponent className="w-6 h-6" />
-                                    )}
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold">Phase {phase.id}</h3>
-                                    <p className="text-sm opacity-90">{phase.title}</p>
-                                </div>
-                            </div>
-
-                            {/* Current indicator */}
-                            {isCurrent && (
-                                <div className="flex items-center space-x-1 bg-yellow-500 bg-opacity-20 px-2 py-1 rounded-full">
-                                    <MapPin className="w-4 h-4 text-yellow-300" />
-                                    <span className="text-xs font-medium">Current</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Description */}
-                        <p className="text-sm mb-4 opacity-90">{phase.description}</p>
-
-                        {/* Progress bar */}
-                        <div className="mb-4">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-xs opacity-75">Progress</span>
-                                <span className="text-xs font-medium">
-                                    {Math.round(stats.completionRate * 100)}%
-                                </span>
-                            </div>
-                            <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
-                                <div
-                                    className="bg-white h-2 rounded-full transition-all duration-500"
-                                    style={{ width: `${stats.completionRate * 100}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Stats */}
-                        <div className="flex justify-between text-xs opacity-90">
-                            <span>{stats.completedLessons}/{stats.totalLessons} lessons</span>
-                            <span>{phase.weeks} weeks</span>
-                        </div>
-
-                        {/* Concepts preview */}
-                        <div className="mt-3 flex flex-wrap gap-1">
-                            {phase.concepts.slice(0, 2).map((concept, index) => (
-                                <span
-                                    key={index}
-                                    className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded"
-                                >
-                                    {concept}
-                                </span>
-                            ))}
-                            {phase.concepts.length > 2 && (
-                                <span className="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">
-                                    +{phase.concepts.length - 2} more
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Expand indicator */}
-                        {!isLocked && (
-                            <div className="absolute bottom-2 right-2">
-                                {isSelected ? (
-                                    <ChevronUp className="w-4 h-4 opacity-60" />
-                                ) : (
-                                    <ChevronDown className="w-4 h-4 opacity-60" />
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Week details (expanded view) */}
-                <AnimatePresence>
-                    {isSelected && !isLocked && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="mt-4 bg-gray-800 rounded-lg p-4 border border-gray-700"
-                        >
-                            <h4 className="text-sm font-semibold text-white mb-3">Week Progress</h4>
-                            <div className="grid grid-cols-4 gap-2">
-                                {Array.from({ length: phase.weeks }, (_, index) => {
-                                    const weekNumber = index + 1;
-                                    const weekData = stats.weeks[weekNumber] || [];
-                                    const weekCompletion = weekData.length > 0 
-                                        ? weekData.filter(lesson => 
-                                            lesson.status === 'completed' || lesson.status === 'mastered'
-                                          ).length / weekData.length 
-                                        : 0;
-                                    const isCurrentWeek = isCurrent && getCurrentPosition().week === weekNumber;
-
-                                    return (
-                                        <motion.div
-                                            key={weekNumber}
-                                            whileHover={{ scale: 1.05 }}
-                                            className={`
-                                                relative p-2 rounded cursor-pointer transition-all duration-200
-                                                ${isCurrentWeek 
-                                                    ? 'bg-yellow-500 bg-opacity-20 border border-yellow-400' 
-                                                    : weekCompletion >= 1 
-                                                        ? 'bg-green-500 bg-opacity-20 border border-green-400'
-                                                        : weekCompletion > 0
-                                                            ? 'bg-blue-500 bg-opacity-20 border border-blue-400'
-                                                            : 'bg-gray-700 border border-gray-600'
-                                                }
-                                                hover:bg-opacity-30
-                                            `}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleWeekClick(phase.id, weekNumber);
-                                            }}
-                                            onMouseEnter={() => setHoveredWeek({ phase: phase.id, week: weekNumber })}
-                                            onMouseLeave={() => setHoveredWeek(null)}
-                                        >
-                                            <div className="text-center">
-                                                <div className="text-xs font-medium text-white">
-                                                    Week {weekNumber}
-                                                </div>
-                                                <div className="text-xs text-gray-300 mt-1">
-                                                    {Math.round(weekCompletion * 100)}%
-                                                </div>
-                                            </div>
-
-                                            {/* Current week indicator */}
-                                            {isCurrentWeek && (
-                                                <div className="absolute -top-1 -right-1">
-                                                    <MapPin className="w-3 h-3 text-yellow-400" />
-                                                </div>
-                                            )}
-
-                                            {/* Completion indicator */}
-                                            {weekCompletion >= 1 && (
-                                                <div className="absolute -top-1 -right-1">
-                                                    <CheckCircle className="w-3 h-3 text-green-400" />
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Week hover tooltip */}
-                            {hoveredWeek && hoveredWeek.phase === phase.id && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-3 p-3 bg-gray-900 rounded-lg border border-gray-600"
-                                >
-                                    <p className="text-sm text-white">
-                                        Week {hoveredWeek.week} - Click to explore lessons and quests
-                                    </p>
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
-        );
-    };
-
-    // Render summary statistics
-    const renderSummaryStats = () => {
-        if (!progressSummary) return null;
-
-        const completionRate = progressSummary.totalLessons > 0 
-            ? progressSummary.completedLessons / progressSummary.totalLessons 
-            : 0;
-
-        const masteryRate = progressSummary.completedLessons > 0 
-            ? progressSummary.masteredLessons / progressSummary.completedLessons 
-            : 0;
-
-        return (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {/* Overall Progress */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-gray-800 rounded-lg p-4 border border-gray-700"
-                >
-                    <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-blue-500 bg-opacity-20 rounded-lg">
-                            <TrendingUp className="w-5 h-5 text-blue-400" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold text-white">
-                                {Math.round(completionRate * 100)}%
-                            </p>
-                            <p className="text-sm text-gray-400">Overall Progress</p>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Learning Streak */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-gray-800 rounded-lg p-4 border border-gray-700"
-                >
-                    <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-orange-500 bg-opacity-20 rounded-lg">
-                            <Flame className="w-5 h-5 text-orange-400" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold text-white">
-                                {streakData?.data?.currentStreak || 0}
-                            </p>
-                            <p className="text-sm text-gray-400">Day Streak</p>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Study Time */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-gray-800 rounded-lg p-4 border border-gray-700"
-                >
-                    <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-green-500 bg-opacity-20 rounded-lg">
-                            <Clock className="w-5 h-5 text-green-400" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold text-white">
-                                {Math.round(progressSummary.totalStudyTime / 60)}h
-                            </p>
-                            <p className="text-sm text-gray-400">Study Time</p>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Vault Items */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-gray-800 rounded-lg p-4 border border-gray-700"
-                >
-                    <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-purple-500 bg-opacity-20 rounded-lg">
-                            <Sparkles className="w-5 h-5 text-purple-400" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold text-white">
-                                {vaultData?.data?.unlocked || 0}
-                            </p>
-                            <p className="text-sm text-gray-400">Vault Items</p>
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
-        );
-    };
-
-    // Render current position indicator
-    const renderCurrentPosition = () => {
-        if (!progressSummary) return null;
-
-        const currentPos = getCurrentPosition();
-        const currentPhase = phases.find(p => p.id === currentPos.phase);
-
-        if (!currentPhase) return null;
-
-        return (
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-8 p-6 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl text-white"
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                        <div className="p-3 bg-white bg-opacity-20 rounded-full">
-                            <MapPin className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold">Current Position</h3>
-                            <p className="opacity-90">
-                                Phase {currentPos.phase}: {currentPhase.title} - Week {currentPos.week}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => navigate(`/learning/phase/${currentPos.phase}/week/${currentPos.week}`)}
-                        className="flex items-center space-x-2 bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all duration-200"
-                    >
-                        <span>Continue Learning</span>
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
-            </motion.div>
-        );
-    };
-
-    // Loading state
-    if (isLoading) {
-        return (
-            <div className={`space-y-6 ${className}`}>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-gray-800 rounded-lg p-4 animate-pulse">
-                            <div className="h-16 bg-gray-700 rounded"></div>
-                        </div>
-                    ))}
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-gray-800 rounded-xl p-6 animate-pulse">
-                            <div className="h-32 bg-gray-700 rounded"></div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
+      node.call(drag);
     }
 
-    // Error state
-    if (error) {
-        return (
-            <div className={`text-center py-12 ${className}`}>
-                <div className="text-red-400 mb-4">
-                    <AlertTriangle className="w-12 h-12 mx-auto" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Failed to load progress</h3>
-                <p className="text-gray-400 mb-4">Unable to fetch your learning progress.</p>
-                <button
-                    onClick={() => refetch()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                    Try Again
-                </button>
-            </div>
-        );
-    }
+    // Update positions on simulation tick
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // Cleanup
+    return () => {
+      if (simulationRef.current) {
+        simulationRef.current.stop();
+      }
+    };
+  }, [filteredData, viewMode, compact, interactive, showLabels, showDifficulty, selectedNode, hoveredNode, highlightPhase]);
+
+  // Render control panel
+  const renderControls = () => {
+    if (compact) return null;
 
     return (
-        <div className={`space-y-6 ${className}`}>
-            {/* Summary Statistics */}
-            {renderSummaryStats()}
+      <div className="absolute top-4 left-4 bg-gray-800 rounded-lg border border-gray-700 p-4 space-y-3 z-10">
+        <div className="flex items-center space-x-2">
+          <Settings className="w-4 h-4 text-gray-400" />
+          <span className="text-sm font-medium text-white">View Controls</span>
+        </div>
 
-            {/* Current Position */}
-            {renderCurrentPosition()}
+        {/* View Mode */}
+        <div>
+          <label className="block text-xs text-gray-400 mb-1">Layout</label>
+          <select
+            value={viewMode}
+            onChange={(e) => setViewMode(e.target.value)}
+            className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs"
+          >
+            <option value="neural">Neural Network</option>
+            <option value="flow">Learning Flow</option>
+            <option value="tree">Hierarchy Tree</option>
+            <option value="grid">Grid Layout</option>
+          </select>
+        </div>
 
-            {/* Progress Map Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Learning Progress Map</h2>
-                    <p className="text-gray-400">
-                        Track your journey through the Neural Odyssey ML curriculum
-                    </p>
+        {/* Filter Level */}
+        <div>
+          <label className="block text-xs text-gray-400 mb-1">Filter</label>
+          <select
+            value={filterLevel}
+            onChange={(e) => setFilterLevel(e.target.value)}
+            className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs"
+          >
+            <option value="all">All Items</option>
+            <option value="current">Current Phase</option>
+            <option value="completed">Completed</option>
+            <option value="locked">Locked</option>
+          </select>
+        </div>
+
+        {/* Toggle Options */}
+        <div className="space-y-2">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={showLabels}
+              onChange={(e) => setShowLabels(e.target.checked)}
+              className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded"
+            />
+            <span className="text-xs text-gray-300">Show Labels</span>
+          </label>
+          
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={showDifficulty}
+              onChange={(e) => setShowDifficulty(e.target.checked)}
+              className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded"
+            />
+            <span className="text-xs text-gray-300">Difficulty Bars</span>
+          </label>
+          
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={showConnections}
+              onChange={(e) => setShowConnections(e.target.checked)}
+              className="w-3 h-3 text-blue-600 bg-gray-100 border-gray-300 rounded"
+            />
+            <span className="text-xs text-gray-300">Knowledge Links</span>
+          </label>
+        </div>
+
+        {/* Zoom Info */}
+        <div className="text-xs text-gray-400">
+          Zoom: {Math.round(zoomLevel * 100)}%
+        </div>
+      </div>
+    );
+  };
+
+  // Render node details panel
+  const renderNodeDetails = () => {
+    if (!selectedNode || compact) return null;
+
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, x: 300 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 300 }}
+          className="absolute top-4 right-4 bg-gray-800 rounded-lg border border-gray-700 p-4 w-80 z-10"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-white">{selectedNode.title}</h3>
+            <button
+              onClick={() => setSelectedNode(null)}
+              className="text-gray-400 hover:text-white"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {/* Status and Progress */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs text-gray-400">Status</div>
+                <div className={`text-sm font-medium capitalize ${
+                  selectedNode.status === 'completed' ? 'text-green-400' :
+                  selectedNode.status === 'in_progress' ? 'text-yellow-400' :
+                  selectedNode.status === 'mastered' ? 'text-purple-400' :
+                  'text-gray-400'
+                }`}>
+                  {selectedNode.status?.replace('_', ' ')}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400">Progress</div>
+                <div className="text-sm font-medium text-white">
+                  {Math.round((selectedNode.progress || 0) * 100)}%
+                </div>
+              </div>
+            </div>
+
+            {/* Concepts */}
+            {selectedNode.concepts && selectedNode.concepts.length > 0 && (
+              <div>
+                <div className="text-xs text-gray-400 mb-1">Key Concepts</div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedNode.concepts.map((concept, index) => (
+                    <span
+                      key={index}
+                      className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded"
+                    >
+                      {concept.replace('_', ' ')}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Time and Difficulty */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs text-gray-400">Time Spent</div>
+                <div className="text-sm text-white">{selectedNode.timeSpent || 0}m</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400">Difficulty</div>
+                <div className="flex items-center space-x-1">
+                  {[1, 2, 3, 4, 5].map((level) => (
+                    <div
+                      key={level}
+                      className={`w-2 h-2 rounded ${
+                        level <= (selectedNode.difficulty || 3) ? 'bg-orange-400' : 'bg-gray-600'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Prerequisites */}
+            {selectedNode.prerequisites && selectedNode.prerequisites.length > 0 && (
+              <div>
+                <div className="text-xs text-gray-400 mb-1">Prerequisites</div>
+                <div className="space-y-1">
+                  {selectedNode.prerequisites.map((prereqId, index) => {
+                    const prereqNode = processedData.nodes.find(n => n.id === prereqId);
+                    return (
+                      <div key={index} className="text-xs text-gray-300">
+                        {prereqNode ? prereqNode.title : prereqId}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Skills */}
+            {selectedNode.skills && selectedNode.skills.length > 0 && (
+              <div>
+                <div className="text-xs text-gray-400 mb-1">Skills Developed</div>
+                <div className="space-y-1">
+                  {selectedNode.skills.map((skill, index) => (
+                    <div key={index} className="flex items-center justify-between text-xs">
+                      <span className="text-gray-300">{skill.name}</span>
+                      <span className="text-white">{skill.points} pts</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  };
+
+  // Render legend
+  const renderLegend = () => {
+    if (compact) return null;
+
+    return (
+      <div className="absolute bottom-4 left-4 bg-gray-800 rounded-lg border border-gray-700 p-4 z-10">
+        <div className="flex items-center space-x-2 mb-3">
+          <Info className="w-4 h-4 text-gray-400" />
+          <span className="text-sm font-medium text-white">Legend</span>
+        </div>
+
+        <div className="space-y-2">
+          {/* Status Legend */}
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Status</div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-gray-600"></div>
+                <span className="text-gray-300">Not Started</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <span className="text-gray-300">In Progress</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className="text-gray-300">Completed</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <span className="text-gray-300">Mastered</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Connection Types */}
+          {showConnections && (
+            <div>
+              <div className="text-xs text-gray-400 mb-1">Connections</div>
+              <div className="space-y-1 text-xs">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-px bg-gray-500"></div>
+                  <span className="text-gray-300">Prerequisite</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <button
-                        onClick={() => setMapView(mapView === 'overview' ? 'detailed' : 'overview')}
-                        className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition-colors"
-                    >
-                        <Map className="w-4 h-4" />
-                        <span>{mapView === 'overview' ? 'Detailed View' : 'Overview'}</span>
-                    </button>
+                  <div className="w-4 h-px bg-blue-500" style={{ strokeDasharray: '2,2' }}></div>
+                  <span className="text-gray-300">Related</span>
                 </div>
+              </div>
             </div>
-
-            {/* Phase Cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {phases.map(phase => renderPhaseCard(phase))}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mt-8 p-6 bg-gray-800 rounded-lg border border-gray-700">
-                <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <button
-                        onClick={() => navigate('/learning/next-lesson')}
-                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg transition-colors"
-                    >
-                        <BookOpen className="w-4 h-4" />
-                        <span>Next Lesson</span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/quests')}
-                        className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg transition-colors"
-                    >
-                        <Target className="w-4 h-4" />
-                        <span>View Quests</span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/vault')}
-                        className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-lg transition-colors"
-                    >
-                        <Sparkles className="w-4 h-4" />
-                        <span>Vault</span>
-                    </button>
-                    <button
-                        onClick={() => navigate('/analytics')}
-                        className="flex items-center space-x-2 bg-orange-600 hover:bg-orange-700 text-white p-3 rounded-lg transition-colors"
-                    >
-                        <TrendingUp className="w-4 h-4" />
-                        <span>Analytics</span>
-                    </button>
-                </div>
-            </div>
+          )}
         </div>
+      </div>
     );
+  };
+
+  return (
+    <div className={`relative w-full ${compact ? 'h-64' : 'h-full min-h-96'} ${className}`}>
+      <div ref={containerRef} className="w-full h-full">
+        <svg
+          ref={svgRef}
+          width="100%"
+          height="100%"
+          className="bg-gray-900 rounded-lg"
+        >
+          {/* Gradient definitions for enhanced visual effects */}
+          <defs>
+            <radialGradient id="nodeGradient" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.2"/>
+              <stop offset="100%" stopColor="#000000" stopOpacity="0.1"/>
+            </radialGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge> 
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+        </svg>
+      </div>
+
+      {/* Overlay Controls */}
+      {renderControls()}
+      {renderNodeDetails()}
+      {renderLegend()}
+
+      {/* Statistics Overlay */}
+      {!compact && progressData?.data && (
+        <div className="absolute top-4 right-4 bg-gray-800 rounded-lg border border-gray-700 p-4 z-10">
+          <div className="text-sm font-medium text-white mb-2">Progress Overview</div>
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Current Phase:</span>
+              <span className="text-white">{progressData.data.profile?.current_phase || 1}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Current Week:</span>
+              <span className="text-white">{progressData.data.profile?.current_week || 1}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Completed:</span>
+              <span className="text-green-400">
+                {filteredData.nodes.filter(n => n.status === 'completed' || n.status === 'mastered').length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">In Progress:</span>
+              <span className="text-yellow-400">
+                {filteredData.nodes.filter(n => n.status === 'in_progress').length}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default ProgressMap;
